@@ -21,7 +21,7 @@ function draw() {
     let colourGround = color(randomHue2,50,75);
     let colourMesa = color(lerp(randomHue,randomHue2,0.5),50,75); 
 
-    if(random(25) > 24){
+    if(random(20) > 19){
       colourSky = color(0,0,100);
       colourGround = color(0,0,100);
       colourMesa = color(0,0,100);      
