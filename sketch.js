@@ -128,7 +128,7 @@ function drawMesa(y1, y2, res, col){
   sliceX[sliceNum+1] = width;
   sliceY[sliceNum+1] = (sliceMesa[sliceNum] == 1) ? mesaTop+(5-ceil(random(10))) : mesaBottom+(5-ceil(random(10)));
   
-  //Draw fill
+  //Draw block fill
   push();
   fill(col);
   beginShape();
@@ -164,10 +164,10 @@ function drawGround(x1, y1, x2, y2, res){
   let new_y = bezierPoint(y1,y1-c1.y,y1-c2.y,y1,0)+(1-random(2));
   let old_y = new_y;
 
-  const isRepeating = round(random());
+  const groundStyle = floor(random(3)); //0 = nothing; 1 = dashes; 2 = repeating lines
   const hasGaps = round(random());
-  const hasDashes = !isRepeating;
-  const lengthDashes = ceil(random(15))+5;
+  const hasGrass = round(random());
+  const dashDir = 225;
 
   let gap = [];
   
@@ -194,31 +194,27 @@ function drawGround(x1, y1, x2, y2, res){
       line(old_x,old_y,new_x,new_y);
 
       //Draw dashes
-      if(hasDashes == 1){
-        let strokeX = (lengthDashes+(2-random(4)))*cos(225+(0.5-random(1)));
-        let strokeY = (lengthDashes+(2-random(4)))*sin(45+(0.5-random(1)));
-        let midX1 = lerp(old_x,new_x,0.33);
-        let midX2 = lerp(old_x,new_x,0.66);
-        let midY1 = lerp(old_y,new_y,0.33);
-        let midY2 = lerp(old_y,new_y,0.66);
-
-        strokeWeight(1+random(0.25));
-        line(old_x,old_y,old_x+strokeX,old_y+strokeY);
-
-        strokeX = ((lengthDashes*0.66)+(2-random(4)))*cos(225+(0.5-random(1)));
-        strokeY = ((lengthDashes*0.66)+(2-random(4)))*sin(45+(0.5-random(1)));
-
-        strokeWeight(0.5+random(0.125));
-        line(midX1,midY1,midX1+strokeX,midY1+strokeY);
-        line(midX2,midY2,midX2+strokeX,midY2+strokeY);
+      if(groundStyle == 1){
+        drawDashes(old_x,old_y,new_x,new_y,dashDir);
       }
 
       //Cut gaps
-      if(hasGaps == 1 && random(res) > res-1){
+      if(hasGaps == 1 && (random(res) > (res-1) - (res/5*hasGrass))){
         let gapDistance = ceil(random(2));
 
         for(let j = 0; j < gapDistance; j++){
           gap[i+(j+1)] = 1;  
+        }
+      }
+    }
+    else{
+      if(hasGrass == 1){
+        for(let i = 0; i < 3; i++){
+          let grassX = lerp(old_x,new_x,0.25+(0.25*i));
+          let grassY = lerp(old_y,new_y,0.25+(0.25*i));
+
+          strokeWeight(1+random(0.33));
+          line(grassX,grassY,grassX+(2.5-random(5)),grassY-(2.5+random(12.5)));
         }
       }
     }
@@ -228,7 +224,7 @@ function drawGround(x1, y1, x2, y2, res){
     old_y = new_y;
   }
 
-  if(isRepeating == 1){
+  if(groundStyle == 2){
     let lineRepeat = ceil(random(5))+2;
 
     for(let j = 0; j < lineRepeat; j++){
@@ -299,6 +295,27 @@ function drawDusk(x1, y1, x2, y2, res){
     gap = 0; //Reset gap so new line doesn't start w/a break
     stroke(0+random(10));
   }  
+}
+
+function drawDashes(x1, y1, x2, y2, dir){
+  let lengthDashes = ceil(random(15))+5;
+
+  let strokeX = (lengthDashes+(2-random(4)))*cos(dir+(0.5-random(1)));
+  let strokeY = (lengthDashes+(2-random(4)))*sin(45+(0.5-random(1)));
+  let midX1 = lerp(x1,x2,0.33);
+  let midX2 = lerp(x1,x2,0.66);
+  let midY1 = lerp(y1,y2,0.33);
+  let midY2 = lerp(y1,y2,0.66);
+
+  strokeWeight(1+random(0.25));
+  line(x1,y1,x1+strokeX,y1+strokeY);
+
+  strokeX = ((lengthDashes*0.66)+(2-random(4)))*cos(dir+(0.25-random(0.5)));
+  strokeY = ((lengthDashes*0.66)+(2-random(4)))*sin(45+(0.25-random(0.5)));
+
+  strokeWeight(0.5+random(0.125));
+  line(midX1,midY1,midX1+strokeX,midY1+strokeY);
+  line(midX2,midY2,midX2+strokeX,midY2+strokeY);
 }
 
 function bezierWobble(x1, y1, cx1, cy1, cx2, cy2, x2, y2, gap, res){
