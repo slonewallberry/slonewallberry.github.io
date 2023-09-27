@@ -57,7 +57,7 @@ function draw() {
     rect(0,0,width,height);
 
     if(isDusk == 1){ //Think about rain also (diagonals) / clouds
-      duskWobble(0,0,width,height*heightSky,100*heightSky);
+      drawDusk(0,0,width,height*heightSky,100*heightSky);
     }
 
 //---MESAS---
@@ -197,9 +197,20 @@ function drawGround(x1, y1, x2, y2, res){
       if(hasDashes == 1){
         let strokeX = (lengthDashes+(2-random(4)))*cos(225+(0.5-random(1)));
         let strokeY = (lengthDashes+(2-random(4)))*sin(45+(0.5-random(1)));
+        let midX1 = lerp(old_x,new_x,0.33);
+        let midX2 = lerp(old_x,new_x,0.66);
+        let midY1 = lerp(old_y,new_y,0.33);
+        let midY2 = lerp(old_y,new_y,0.66);
 
         strokeWeight(1+random(0.25));
         line(old_x,old_y,old_x+strokeX,old_y+strokeY);
+
+        strokeX = ((lengthDashes*0.66)+(2-random(4)))*cos(225+(0.5-random(1)));
+        strokeY = ((lengthDashes*0.66)+(2-random(4)))*sin(45+(0.5-random(1)));
+
+        strokeWeight(0.5+random(0.125));
+        line(midX1,midY1,midX1+strokeX,midY1+strokeY);
+        line(midX2,midY2,midX2+strokeX,midY2+strokeY);
       }
 
       //Cut gaps
@@ -252,7 +263,7 @@ function drawGround(x1, y1, x2, y2, res){
   */
 }
 
-function duskWobble(x1, y1, x2, y2, res){
+function drawDusk(x1, y1, x2, y2, res){
   let inc = 0.5; //Random increments
   let gap = 0; //Gap
   let new_x = x1;
