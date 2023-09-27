@@ -28,9 +28,16 @@ function draw() {
     }
 
     //Heights
-    let heightSky = 0.45+random(0.1); //Height of the sky 
+    if(random(10) < 9 == 1){
+      heightSky = 0.45+random(0.1);
+    }
+    else{
+      heightSky = (round(random()) == 1) ? 0.25+random(0.1) : 0.75+random(0.1); 
+    }
+    
     let heightMesa = (height*heightSky)-(height*(0.1+random(0.1))); //Height of the mesa
     
+    //Modifiers
     if(random(10) > 7){ //70% chance to be normal sky
         if(random(3) < 2){ //20% to be dusk
           isDusk = 1;
