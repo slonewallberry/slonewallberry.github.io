@@ -61,7 +61,9 @@ function draw() {
     }
 
 //---MESAS---
-    drawMesa(heightMesa, height*heightSky, 30, colourMesa);
+    if(round(random()) == 1){
+      drawMesa(heightMesa, height*heightSky, 30, colourMesa);
+    }
 
 //---GROUND---  
     noStroke();
@@ -70,11 +72,11 @@ function draw() {
 }
 
 function drawMesa(y1, y2, res, col){
-  let mesaNum = 1+floor(random(3)); //Minimum 1; maximum 4 mesas
-  let isMesaStart = round(random());
-  let isMesaEnd = round(random());
-  let mesaBlocks = ((mesaNum*2)+1)-isMesaStart-isMesaEnd;
-  let blockW = width/mesaBlocks;
+  const mesaNum = 1+floor(random(3)); //Minimum 1; maximum 4 mesas
+  const isMesaStart = round(random());
+  const isMesaEnd = round(random());
+  const mesaBlocks = ((mesaNum*2)+1)-isMesaStart-isMesaEnd;
+  const blockW = width/mesaBlocks;
   
   let mesaW = [];
   mesaW[0] = 0;
@@ -102,6 +104,12 @@ function drawMesa(y1, y2, res, col){
   
   let mesaTop = y1+ceil(random((y2-y1)/3));
   let mesaBottom = y2+(100-random(120));
+
+  const isShaded = round(random());
+  let shadeX = [];
+  let shadeY = [];
+  shadeX[0] = 0;
+  shadeY[0] = 0;
   
   //Subdivide mesas
   for(let i = 0; i < mesaBlocks+1; i++){    
@@ -111,6 +119,9 @@ function drawMesa(y1, y2, res, col){
       sliceX[sliceNum] = mesaX[i]+(j*res);
       sliceY[sliceNum] = (sliceMesa[sliceNum] == 1) ? mesaTop+(5-ceil(random(10))) : mesaBottom+(5-ceil(random(10)));
       
+      shadeX[sliceNum] = (sliceMesa[sliceNum] == 1) ? sliceX[sliceNum] : -1;
+      shadeY[sliceNum] = (sliceMesa[sliceNum] == 1) ? sliceY[sliceNum] : -1;
+
       sliceNum += 1;
     }
     
@@ -150,6 +161,18 @@ function drawMesa(y1, y2, res, col){
       push();
       stroke(0);
       lineWobble(sliceX[i],sliceY[i],sliceX[i+1],sliceY[i+1],0,3);
+
+      if(isShaded == 1 && shadeX[i] != -1 && shadeY[i] != -1){
+        let shadeNum = 3;
+        
+        for(let j = 0; j < shadeNum; j++){
+          let xx = lerp(sliceX[i],sliceX[i+1],(1/shadeNum)*j);
+          let yy = lerp(sliceY[i],sliceY[i+1],(1/shadeNum)*j);
+          
+          lineWobble(xx+(2-random(4)),yy+(2+random(5)),xx+(2-random(4)),y2-(2-random(5)),0,2);
+        }
+      } 
+
       pop();
   }
 }
@@ -167,6 +190,7 @@ function drawGround(x1, y1, x2, y2, res){
   const groundStyle = floor(random(3)); //0 = nothing; 1 = dashes; 2 = repeating lines
   const hasGaps = round(random());
   const hasGrass = round(random());
+  const grassNum = 1+ceil(random(4));
   const dashDir = 225;
 
   let gap = [];
@@ -199,7 +223,7 @@ function drawGround(x1, y1, x2, y2, res){
       }
 
       //Cut gaps
-      if(hasGaps == 1 && (random(res) > (res-1) - (res/5*hasGrass))){
+      if(hasGaps == 1 && (random(res) > (res-1) - (res/grassNum*hasGrass))){
         let gapDistance = ceil(random(2));
 
         for(let j = 0; j < gapDistance; j++){
