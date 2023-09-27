@@ -9,8 +9,7 @@ function setup() {
   
 function draw() {
 //---VARIABLES---
-    let heightSky = 0.45+random(0.1); //Height of the sky 
-    let heightMesa = (height*heightSky)-(height*(0.1+random(0.1))); //Height of the mesa    
+    //Colours    
     let randomHue = random(360); //Random hue
     let randomHue2 = randomHue+180; //Opposite colour ground
 
@@ -21,6 +20,16 @@ function draw() {
     let colourSky = color(randomHue,50,75);
     let colourGround = color(randomHue2,50,75);
     let colourMesa = color(lerp(randomHue,randomHue2,0.5),50,75); 
+
+    if(random(25) > 24){
+      colourSky = color(0,0,100);
+      colourGround = color(0,0,100);
+      colourMesa = color(0,0,100);      
+    }
+
+    //Heights
+    let heightSky = 0.45+random(0.1); //Height of the sky 
+    let heightMesa = (height*heightSky)-(height*(0.1+random(0.1))); //Height of the mesa
     
     if(random(10) > 7){ //70% chance to be normal sky
         if(random(3) < 2){ //20% to be dusk
