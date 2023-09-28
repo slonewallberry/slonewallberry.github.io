@@ -1,9 +1,10 @@
 /*
 ---TO DO LIST---
 
-  -> Different sky styles (waves, clouds, rain, sun / moon)
+  -> Different sky styles (waves, clouds, rain, moon)
   -> Different background objects (trees, different mesas)
   -> Foreground objects (paths, pools of water)
+  -> Frames (cliff edge, looking out of window / stables)
   -> Numbers
 
 */
@@ -29,8 +30,8 @@ function draw() {
 
     let hueMesa = lerp(hueSky,hueGround,0.66);
     let hueSun = lerp(hueSky,hueGround,0.33);
-    let sat = 50;
-    let bri = 75;
+    let sat = 50+(5-random(10));
+    let bri = 75+(5-random(10));
 
     if(random(20) > 19){
       hueSky = 0;
@@ -89,7 +90,20 @@ function draw() {
     noStroke();
     fill(color(hueGround,sat,bri));
     drawGround(0,height*heightSky,width,height,36);
+
+//---FOREGROUND---
+    let hasVeranda = (heightSky >= 0.36) ? 1 : 0;
+
+    if(hasVeranda == 1){
+      hasVeranda = (random(20) > 19) ? 1 : 0;
+    }
+
+    if(hasVeranda == 1){
+      drawVeranda(hueMesa, sat, bri);
+    }
 }
+
+//Draw (wholes)
 
 function drawSun(x, y, hue, sat, bri){
   let styleSun  = (round(random()) == 1) ? 1 : 0; 
@@ -105,13 +119,13 @@ function drawSun(x, y, hue, sat, bri){
 
   switch(styleSun){
     case 0:
-      circleWobble(x,y,20*sunSize,30*sunSize,1,hue, sat, bri, 0);  
+      circleWobble(x, y, 20*sunSize, 30*sunSize, 1, hue, sat, bri, 0);  
     break;
 
     case 1:
       for(let i = 0; i < ringNum; i++){
         let gap = (1/ringNum) * (i+1);
-        circleWobble(x,y,(20*(i+2))*sunSize,(30*(i+2))*sunSize,1,-1, -1, -1, gap);  
+        circleWobble(x, y, (20*(i+2))*sunSize, (30*(i+2))*sunSize, 1 ,-1, -1, -1, gap);  
       }
 
       circleWobble(x,y,10*sunSize,20*sunSize,1,hue, sat, bri, 0); 
@@ -477,6 +491,93 @@ function drawDashes(x1, y1, x2, y2, dir){
   line(midX2,midY2,midX2+strokeX,midY2+strokeY);
 }
 
+function drawVeranda(hue, sat, bri){
+  const margin = (width/10)+10-random(20);
+  const styleMargin = round(random());
+  const col = (hue == 0) ? color(hue,sat,0) : color(hue,sat-20,bri-25);
+  const colBauble = (hue == 0) ? color(255,sat,255) : color(hue,sat-20,bri-40);
+  const baubleNum = 1+floor(random(4));
+  const baubleSize = 0.5+random(1.5);
+
+  //Draw fill
+  push();
+  noStroke();
+  fill(col);
+  beginShape();
+  vertex(0,0);
+  vertex(0,height);
+  vertex(margin,height);
+  vertex(margin,margin*2);
+
+  if(styleMargin == 0){
+    quadraticVertex(margin,margin,margin*2,margin); 
+  }
+  else{
+    quadraticVertex(margin*2,margin*2,margin*2,margin);  
+  }
+
+  vertex(width-(margin*2),margin);
+
+  if(styleMargin == 0){
+    quadraticVertex(width-margin,margin,width-margin,margin*2,); 
+  }
+  else{
+    quadraticVertex(width-(margin*2),margin*2,width-margin,margin*2);  
+  }
+
+  vertex(width-margin,height);
+  vertex(width,height);
+  vertex(width,0);
+
+  endShape(CLOSE);
+  pop();
+
+  //Draw outline
+  lineWobble(margin,margin*2,margin,height,0,20);
+  if(styleMargin == 0){
+    bezierQuadraticWobble(margin,margin*2,margin,margin,margin*2,margin,0,20);
+  }
+  else{
+    bezierQuadraticWobble(margin,margin*2,margin*2,margin*2,margin*2,margin,0,20);    
+  }
+  lineWobble(margin*2,margin,width-(margin*2),margin,0,20);
+
+  if(styleMargin == 0){
+    bezierQuadraticWobble(width-margin,margin*2,width-margin,margin,width-(margin*2),margin,0,20);
+  }
+  else{
+    bezierQuadraticWobble(width-margin,margin*2,width-(margin*2),margin*2,width-(margin*2),margin,0,20);
+  }
+  lineWobble(width-margin,margin*2,width-margin,height,0,20);
+
+  //Draw baubles
+  push();
+  fill(colBauble);
+  noStroke();
+  for(let i = 0; i < baubleNum+1; i++){
+    let x = (width/(baubleNum+2))*(i+1);
+    let y = margin/2;
+    beginShape();
+    vertex(x-(10*baubleSize),y);
+    vertex(x,y-(10*baubleSize));
+    vertex(x+(10*baubleSize),y);
+    vertex(x,y+(10*baubleSize));
+    endShape(CLOSE);
+  }
+  pop();
+
+  for(let i = 0; i < baubleNum+1; i++){
+    let x = (width/(baubleNum+2))*(i+1);
+    let y = margin/2;
+    lineWobble(x-(10*baubleSize),y,x,y-(10*baubleSize),0,2);
+    lineWobble(x,y-(10*baubleSize),x+(10*baubleSize),y,0,2);
+    lineWobble(x+(10*baubleSize),y,x,y+(10*baubleSize),0,2);
+    lineWobble(x,y+(10*baubleSize),x-(10*baubleSize),y,0,2);
+  }
+}
+
+//Draw (parts)
+
 function bezierWobble(x1, y1, cx1, cy1, cx2, cy2, x2, y2, gap, res){
   let t = 0;
   let new_x = bezierPoint(x1,x1+cx1,x2-cx2,x2,t)+(1-random(2));
@@ -506,7 +607,7 @@ function bezierQuadraticWobble(x1, y1, cx, cy, x2, y2, gap, res){
   let old_x = new_x;
   let old_y = new_y;
   
-  for(i = 0; i < res; i++){
+  for(i = 0; i < res+1; i++){
     t = i/res;
     new_x = lerp(lerp(x1,cx,t),lerp(cx,x2,t),t)+(1-random(2));;
     new_y = lerp(lerp(y1,cy,t),lerp(cy,y2,t),t)+(1-random(2));;
