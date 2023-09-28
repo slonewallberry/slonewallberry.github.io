@@ -10,28 +10,29 @@ function setup() {
 function draw() {
 //---VARIABLES---
     //Colours    
-    let randomHue = random(360); //Random hue
-    let randomHue2 = randomHue+180; //Opposite colour ground
+    let hueSky = random(360); //Random hue
+    let hueGround = hueSky+180; //Opposite colour ground
 
-    if(randomHue2 > 360){ //Wrap opposite colour
-      randomHue2 -= 360;
+    if(hueGround > 360){ //Wrap opposite colour
+      hueGround -= 360;
     }
 
-    let colourSky = color(randomHue,50,75);
-    let colourGround = color(randomHue2,50,75);
-    let colourMesa = color(lerp(randomHue,randomHue2,0.5),50,75); 
+    let hueMesa = lerp(hueSky,hueGround,0.5);
+    let sat = 50;
+    let bri = 75;
 
     if(random(20) > 19){
-      colourSky = color(0,0,100);
-      colourGround = color(0,0,100);
-      colourMesa = color(0,0,100);      
+      hueSky = 0;
+      hueGround = 0;
+      hueMesa = 0;   
+      sat = 100;
+      bri = 100;
     }
 
     //Heights
-    if(random(10) < 9 == 1){
-      heightSky = 0.45+random(0.1);
-    }
-    else{
+    let heightSky = 0.45+random(0.1);
+  
+    if(random(10) >= 9 == 1){
       heightSky = (round(random()) == 1) ? 0.25+random(0.1) : 0.75+random(0.1); 
     }
     
@@ -40,38 +41,79 @@ function draw() {
     //Modifiers
     if(random(10) > 7){ //70% chance to be normal sky
         if(random(3) < 2){ //20% to be dusk
-          isDusk = 1;
+          styleSky = 1;
         }
         else{ //10% chance to be night
-          isDusk = 0;
+          styleSky = 0;
           colourSky = color(0,50,0); //Black
         }
     }
     else{
-      isDusk = 0; //Day
+      styleSky = 0; //Day
     }
 
 //---SKY---
     noStroke();
-    fill(colourSky);
+    fill(color(hueSky,sat,bri));
     rect(0,0,width,height);
 
-    if(isDusk == 1){ //Think about rain also (diagonals) / clouds
-      drawDusk(0,0,width,height*heightSky,100*heightSky);
+    switch(styleSky){
+      case 1:
+        drawMist(0,0,width,height*heightSky,100*heightSky);
+      break;
     }
 
 //---MESAS---
     if(round(random()) == 1){
-      drawMesa(heightMesa, height*heightSky, 30, colourMesa);
+      drawMesa(heightMesa, height*heightSky, 30, hueMesa, sat, bri);
     }
 
 //---GROUND---  
     noStroke();
-    fill(colourGround);
+    fill(color(hueGround,sat,bri));
     drawGround(0,height*heightSky,width,height,36);
 }
 
-function drawMesa(y1, y2, res, col){
+function drawMist(x1, y1, x2, y2, res){
+  let inc = 0.5; //Random increments
+  let gap = 0; //Gap
+  let new_x = x1;
+  let old_x = new_x+(inc-random(inc*2));
+  let new_y = lerp(y1,y2,(i+2)/res);
+  let old_y = new_y+(inc-random(inc*2));
+  
+  stroke(0); //Black
+  
+  for(var i = 0; i < res; i++){
+    for(var j = 0; j < res; j++){
+      new_x = lerp(x1,x2,(j+1)/res)+(inc-random(inc*2));
+      new_y = lerp(y1,y2,(i+1)/res)+(inc-random(inc*2));
+
+      if(gap == 0){ //If no gap...
+        strokeWeight(0.75+random(0.5)); //...vary stroke length
+        line(old_x,old_y,new_x,new_y); //...draw line...
+
+        if(random(50) >= 49){ //...then 1/50 chance for there to be a gap
+          gap = ceil(random(3)); //Gap lasts for a variable length of time
+        }
+      }
+      else{
+        gap -= 1;
+      }
+
+      old_x = new_x;
+      old_y = new_y;
+    }
+
+    old_x = x1;
+    old_y = lerp(y1,y2,(i+2)/res);
+    gap = 0; //Reset gap so new line doesn't start w/a break
+    stroke(0+random(10));
+  }  
+}
+
+function drawMesa(y1, y2, res, hue, sat, bri){
+//---VARIABLES---
   const mesaNum = 1+floor(random(3)); //Minimum 1; maximum 4 mesas
   const isMesaStart = round(random());
   const isMesaEnd = round(random());
@@ -87,7 +129,7 @@ function drawMesa(y1, y2, res, col){
   let isMesa = [];
   isMesa[0] = isMesaStart;
   
-  //Populate arrays which store a block's x pos, width & isMesa
+//---BLOCK XPOS, WIDTH, ISMESA---
   for(let i = 0; i < mesaBlocks+1; i++){
     mesaX[i+1] = (i*blockW)+ blockW*0.33 + ceil(random(blockW*0.67));
     mesaW[i+1] = ceil(mesaX[i+1]-mesaX[i]); //Fixed rounding error
@@ -106,12 +148,13 @@ function drawMesa(y1, y2, res, col){
   let mesaBottom = y2+(100-random(120));
 
   const isShaded = round(random());
+  const styleShade = round(random());
   let shadeX = [];
   let shadeY = [];
   shadeX[0] = 0;
   shadeY[0] = 0;
   
-  //Subdivide mesas
+//---SUBDIVIDE MESA---
   for(let i = 0; i < mesaBlocks+1; i++){    
     //Subdivide mesa block
     for(let j = 0; j < ceil(mesaW[i+1]/res); j++){
@@ -139,8 +182,49 @@ function drawMesa(y1, y2, res, col){
   sliceX[sliceNum+1] = width;
   sliceY[sliceNum+1] = (sliceMesa[sliceNum] == 1) ? mesaTop+(5-ceil(random(10))) : mesaBottom+(5-ceil(random(10)));
   
+//---DRAWING (3D)---
+  const is3D = round(random());
+  const col = color(hue,sat,bri);
+  const col3D = (hue == 0) ? color(hue,sat,0) : color(hue,sat-20,bri-25) ;
+
+  //Draw 3D
+  if(is3D == 1){
+    let depth3D = 3+ceil(random(8));
+
+    //Draw 3D block fill
+    push();
+
+    fill(col3D);
+    beginShape();
+  
+    for(let i = 0; i < sliceNum; i++){
+      vertex(sliceX[i]-depth3D,sliceY[i]);
+    }
+  
+    vertex(width,sliceY[sliceNum]);
+    vertex(width,height);
+    vertex(0,height);
+    vertex(0,sliceY[0]);
+  
+    endShape(CLOSE);
+  
+    pop();
+
+    //Draw 3D outline
+    for(let i = 0; i < sliceNum; i++){
+      push();
+
+      stroke(0);
+      lineWobble(sliceX[i]-depth3D,sliceY[i],sliceX[i+1]-depth3D,sliceY[i+1],0,3);
+
+      pop();
+  }
+  }
+
+//---DRAWING NORMAL---
   //Draw block fill
   push();
+
   fill(col);
   beginShape();
 
@@ -154,22 +238,45 @@ function drawMesa(y1, y2, res, col){
   vertex(0,sliceY[0]);
 
   endShape(CLOSE);
+
   pop();
   
   //Draw outline
   for(let i = 0; i < sliceNum; i++){
       push();
+
       stroke(0);
+      //Draw outlines
       lineWobble(sliceX[i],sliceY[i],sliceX[i+1],sliceY[i+1],0,3);
 
+      //Draw stripe-shading
       if(isShaded == 1 && shadeX[i] != -1 && shadeY[i] != -1){
-        let shadeNum = 3;
-        
-        for(let j = 0; j < shadeNum; j++){
-          let xx = lerp(sliceX[i],sliceX[i+1],(1/shadeNum)*j);
-          let yy = lerp(sliceY[i],sliceY[i+1],(1/shadeNum)*j);
-          
-          lineWobble(xx+(2-random(4)),yy+(2+random(5)),xx+(2-random(4)),y2-(2-random(5)),0,2);
+        if(styleShade == 0){
+          let shadeNum = 1+ceil(random(2));
+
+          for(let j = 0; j < shadeNum; j++){
+            let xx = lerp(sliceX[i],sliceX[i+1],(1/shadeNum)*j);
+            let yy = lerp(sliceY[i],sliceY[i+1],(1/shadeNum)*j);
+            
+            lineWobble(xx+(2-random(4)),yy+(2+random(5)),xx+(2-random(4)),y2-(2-random(5)),0,2);
+          }
+        }
+
+        //Draw spot-shading
+        else if(styleShade == 1 && shadeX[i+1] != -1 && shadeX[i+2] != -1 && shadeX[i-1] != -1){
+          let shadeNum = 3+ceil(random(3));
+
+          for(let j = 0; j < shadeNum; j++){
+            for(let k = 0; k <shadeNum; k++){
+              let xx = lerp(sliceX[i],sliceX[i+1],(1/shadeNum)*j);
+              let yy = lerp(sliceY[i],sliceY[i+1],(1/shadeNum)*k);
+              xx = lerp(xx+(2-random(4)),xx+(2-random(4)),random());
+              yy = lerp(yy+(2+random(5)),y2+10,random());
+
+              fill(0);
+              ellipse(xx,yy,0.5+ceil(random(1)),0.5+ceil(random(1)));
+            }
+          }
         }
       } 
 
@@ -281,44 +388,6 @@ function drawGround(x1, y1, x2, y2, res){
   bezier(path_x1,path_y1,lerp(path_x1,width*0.66,0.33),path_y1,path_x1,lerp(path_y1,height,0.66),width*0.66,height);
   bezier(path_x2,path_y2,lerp(path_x2,width*0.88,0.33),path_y2,path_x2,lerp(path_y2,height,0.66),width*0.88,height);
   */
-}
-
-function drawDusk(x1, y1, x2, y2, res){
-  let inc = 0.5; //Random increments
-  let gap = 0; //Gap
-  let new_x = x1;
-  let old_x = new_x+(inc-random(inc*2));
-  let new_y = lerp(y1,y2,(i+2)/res);
-  let old_y = new_y+(inc-random(inc*2));
-  
-  stroke(0); //Black
-  
-  for(var i = 0; i < res; i++){
-    for(var j = 0; j < res; j++){
-      new_x = lerp(x1,x2,(j+1)/res)+(inc-random(inc*2));
-      new_y = lerp(y1,y2,(i+1)/res)+(inc-random(inc*2));
-
-      if(gap == 0){ //If no gap...
-        strokeWeight(0.75+random(0.5)); //...vary stroke length
-        line(old_x,old_y,new_x,new_y); //...draw line...
-
-        if(random(50) >= 49){ //...then 1/50 chance for there to be a gap
-          gap = ceil(random(3)); //Gap lasts for a variable length of time
-        }
-      }
-      else{
-        gap -= 1;
-      }
-
-      old_x = new_x;
-      old_y = new_y;
-    }
-
-    old_x = x1;
-    old_y = lerp(y1,y2,(i+2)/res);
-    gap = 0; //Reset gap so new line doesn't start w/a break
-    stroke(0+random(10));
-  }  
 }
 
 function drawDashes(x1, y1, x2, y2, dir){
