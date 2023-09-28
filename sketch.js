@@ -100,6 +100,8 @@ function drawSun(x, y, hue, sat, bri){
 
   let sunSize = 0.25+random(1.25);
   let ringNum = 1+ceil(random(3));
+  let rayNum = (round(random()) == 0) ? 45 : 60;
+  let rayOff = random(rayNum);
 
   switch(styleSun){
     case 0:
@@ -118,18 +120,24 @@ function drawSun(x, y, hue, sat, bri){
     case 2:
       circleWobble(x,y,20*sunSize,30*sunSize,1,hue, sat, bri, 0);  
 
-      for(let i = 0; i < 360; i += 30){
-        let x1 = x+(((40+random(20))*sunSize)*cos(i));
-        let y1 = y+(((40+random(20))*sunSize)*sin(i));
-        let x2 = x+(((190+random(20))*sunSize)*cos(i));
-        let y2 = y+(((190+random(20))*sunSize)*sin(i));
+      for(let i = 0; i < 360; i += rayNum){
+        let x1 = x+(((40+random(20))*sunSize)*cos(i+rayOff));
+        let y1 = y+(((40+random(20))*sunSize)*sin(i+rayOff));
+        let x2 = x+(((190+random(20))*sunSize)*cos(i+rayOff));
+        let y2 = y+(((190+random(20))*sunSize)*sin(i+rayOff));
+        lineWobble(x1, y1, x2, y2, 0, 20);
+      }
+
+      for(let i = 0; i < 360; i += rayNum){
+        let x1 = x+(((30+random(20))*sunSize)*cos(i+(rayNum/2)+rayOff));
+        let y1 = y+(((30+random(20))*sunSize)*sin(i+(rayNum/2)+rayOff));
+        let x2 = x+(((120+random(20))*sunSize)*cos(i+(rayNum/2)+rayOff));
+        let y2 = y+(((120+random(20))*sunSize)*sin(i+(rayNum/2)+rayOff));
         lineWobble(x1, y1, x2, y2, 0, 20);
       }
 
     break;
   }
-
-
 }
 
 function drawMist(x1, y1, x2, y2, res){
@@ -544,11 +552,12 @@ function circleWobble(x, y, rMin, rMax, noiseMax, hue, sat, bri, gap){
   let old_x = new_x;
   let old_y = new_y;
 
+  angleMode(RADIANS);
+
   push();
   
   stroke(0);
-  angleMode(RADIANS);
-
+  
   translate(x,y);
 
   for(let i = 0; i < TWO_PI; i += 0.1){
@@ -585,6 +594,8 @@ function circleWobble(x, y, rMin, rMax, noiseMax, hue, sat, bri, gap){
   }
 
   pop();
+
+  angleMode(DEGREES);
 }
 
 //Allow for click refreshing
