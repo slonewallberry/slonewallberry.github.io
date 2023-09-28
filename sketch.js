@@ -1,3 +1,13 @@
+/*
+---TO DO LIST---
+
+  -> Different sky styles (waves, clouds, rain, sun / moon)
+  -> Different background objects (trees, different mesas)
+  -> Foreground objects (paths, pools of water)
+  -> Numbers
+
+*/
+
 function setup() {
     //Use this to define initial environment properties (i.e., screen size) + load files
     createCanvas(600, 600);
@@ -5,7 +15,7 @@ function setup() {
     angleMode(DEGREES);
     rectMode(CORNERS);
     noLoop(); //Static
-  }
+}
   
 function draw() {
 //---VARIABLES---
@@ -17,7 +27,8 @@ function draw() {
       hueGround -= 360;
     }
 
-    let hueMesa = lerp(hueSky,hueGround,0.5);
+    let hueMesa = lerp(hueSky,hueGround,0.66);
+    let hueSun = lerp(hueSky,hueGround,0.33);
     let sat = 50;
     let bri = 75;
 
@@ -25,6 +36,7 @@ function draw() {
       hueSky = 0;
       hueGround = 0;
       hueMesa = 0;   
+      hueSun = 0;
       sat = 100;
       bri = 100;
     }
@@ -32,33 +44,38 @@ function draw() {
     //Heights
     let heightSky = 0.45+random(0.1);
   
-    if(random(10) >= 9 == 1){
+    if(random(5) >= 4){
       heightSky = (round(random()) == 1) ? 0.25+random(0.1) : 0.75+random(0.1); 
     }
     
     let heightMesa = (height*heightSky)-(height*(0.1+random(0.1))); //Height of the mesa
-    
-    //Modifiers
-    if(random(10) > 7){ //70% chance to be normal sky
-        if(random(3) < 2){ //20% to be dusk
-          styleSky = 1;
-        }
-        else{ //10% chance to be night
-          styleSky = 0;
-          colourSky = color(0,50,0); //Black
-        }
-    }
-    else{
-      styleSky = 0; //Day
-    }
+
 
 //---SKY---
+    let isNight = (random(20) > 19) ? 1 : 0;
+    let styleSky = (random(10) < 7) ? 0 : 1;
+    
+    if(styleSky == 1){
+      styleSky = (round(random()) == 1) ? 1 : 2;
+    }
+
     noStroke();
-    fill(color(hueSky,sat,bri));
+
+    if(isNight == 1){
+      fill(0);     
+    }
+    else{
+      fill(color(hueSky,sat,bri));
+    }
+
     rect(0,0,width,height);
 
     switch(styleSky){
       case 1:
+        drawSun((width/10)*(2+ceil(random(7))),(heightMesa/8)*(1+ceil(random(6))), hueSun, sat, bri);
+      break;
+
+      case 2:
         drawMist(0,0,width,height*heightSky,100*heightSky);
       break;
     }
@@ -72,6 +89,47 @@ function draw() {
     noStroke();
     fill(color(hueGround,sat,bri));
     drawGround(0,height*heightSky,width,height,36);
+}
+
+function drawSun(x, y, hue, sat, bri){
+  let styleSun  = (round(random()) == 1) ? 1 : 0; 
+
+  if(styleSun == 1){
+    styleSun = (round(random()) == 1) ? 1 : 2;
+  }
+
+  let sunSize = 0.25+random(1.25);
+  let ringNum = 1+ceil(random(3));
+
+  switch(styleSun){
+    case 0:
+      circleWobble(x,y,20*sunSize,30*sunSize,1,hue, sat, bri, 0);  
+    break;
+
+    case 1:
+      for(let i = 0; i < ringNum; i++){
+        let gap = (1/ringNum) * (i+1);
+        circleWobble(x,y,(20*(i+2))*sunSize,(30*(i+2))*sunSize,1,-1, -1, -1, gap);  
+      }
+
+      circleWobble(x,y,10*sunSize,20*sunSize,1,hue, sat, bri, 0); 
+    break;
+
+    case 2:
+      circleWobble(x,y,20*sunSize,30*sunSize,1,hue, sat, bri, 0);  
+
+      for(let i = 0; i < 360; i += 30){
+        let x1 = x+(((40+random(20))*sunSize)*cos(i));
+        let y1 = y+(((40+random(20))*sunSize)*sin(i));
+        let x2 = x+(((190+random(20))*sunSize)*cos(i));
+        let y2 = y+(((190+random(20))*sunSize)*sin(i));
+        lineWobble(x1, y1, x2, y2, 0, 20);
+      }
+
+    break;
+  }
+
+
 }
 
 function drawMist(x1, y1, x2, y2, res){
@@ -384,10 +442,10 @@ function drawGround(x1, y1, x2, y2, res){
   let path_x2 = bezierPoint(x1,x1+c1.x,x2-c2.x,x2,0.4);
   let path_y2 = bezierPoint(y1,y1-c1.y,y1-c2.y,y1,0.4);
 
-  //noFill();  
-  bezier(path_x1,path_y1,lerp(path_x1,width*0.66,0.33),path_y1,path_x1,lerp(path_y1,height,0.66),width*0.66,height);
-  bezier(path_x2,path_y2,lerp(path_x2,width*0.88,0.33),path_y2,path_x2,lerp(path_y2,height,0.66),width*0.88,height);
-  */
+  noFill();  
+  bezierWobble(path_x1,path_y1,lerp(path_x1,width*0.66,0.33),path_y1,path_x1,lerp(path_y1,height,0.66),width*0.66,height,0,30);
+  bezierWobble(path_x2,path_y2,lerp(path_x2,width*0.88,0.33),path_y2,path_x2,lerp(path_y2,height,0.66),width*0.88,height,0,30);
+  //*/
 }
 
 function drawDashes(x1, y1, x2, y2, dir){
@@ -475,6 +533,58 @@ function lineWobble(x1, y1, x2, y2, gap, res) {
     old_x = new_x;
     old_y = new_y;
   }
+}
+
+function circleWobble(x, y, rMin, rMax, noiseMax, hue, sat, bri, gap){
+  let offsetX = map(cos(0),-1,1,0,noiseMax);
+  let offsetY = map(sin(0),-1,1,0,noiseMax);
+  let r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+  let new_x = r * cos(0);
+  let new_y = r * sin(0);
+  let old_x = new_x;
+  let old_y = new_y;
+
+  push();
+  
+  stroke(0);
+  angleMode(RADIANS);
+
+  translate(x,y);
+
+  for(let i = 0; i < TWO_PI; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = r * cos(i);
+    new_y = r * sin(i);
+    
+    if(random() > gap){
+      strokeWeight(1.25+random(0.5));
+      line(old_x,old_y,new_x,new_y);
+    }
+
+    old_x = new_x;
+    old_y = new_y;
+    
+  }
+  
+  if(hue != -1){
+    fill(color(hue, sat, bri));
+    beginShape();
+    
+    for(let i = 0; i < TWO_PI; i += 0.1){
+      offsetX = map(cos(i),-1,1,0,noiseMax);
+      offsetY = map(sin(i),-1,1,0,noiseMax);
+      r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+      new_x = r * cos(i);
+      new_y = r * sin(i);
+      vertex(new_x,new_y);  
+    }
+    
+    endShape(CLOSE);
+  }
+
+  pop();
 }
 
 //Allow for click refreshing
