@@ -98,7 +98,7 @@ function draw() {
     break;
 
     case 2:
-      for(let i = 0; i < treeNum; i++){
+      for(let i = 1; i < treeNum; i++){
         if(random() > 0.4){
           drawTree(((width/treeNum)*i)+random((width/treeNum)*0.66), height*heightSky, 10+random(10), 45+random(30), [hueMesa, sat, bri], [hueSun, sat, bri], styleTree);
         }
