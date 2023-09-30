@@ -21,90 +21,110 @@ function setup() {
   
 function draw() {
 //---VARIABLES---
-    //Colours    
-    let hueSky = random(360);
-    let hueGround = hueSky+180;
+  //Colours    
+  let hueSky = random(360);
+  let hueGround = hueSky+180;
 
-    if(hueGround > 360){
-      hueGround -= 360;
-    }
+  if(hueGround > 360){
+    hueGround -= 360;
+  }
 
-    let hueMesa = lerp(hueSky,hueGround,0.66);
-    let hueSun = lerp(hueSky,hueGround,0.33);
-    let sat = 50+(5-random(10));
-    let bri = 75+(5-random(10));
+  let hueMesa = lerp(hueSky,hueGround,0.66);
+  let hueSun = lerp(hueSky,hueGround,0.33);
+  let sat = 50+(5-random(10));
+  let bri = 75+(5-random(10));
 
-    if(random(20) > 19){
-      hueSky = 0;
-      hueGround = 0;
-      hueMesa = 0;   
-      hueSun = 0;
-      sat = 100;
-      bri = 100;
-    }
+  if(random(20) > 19){
+    hueSky = 0;
+    hueGround = 0;
+    hueMesa = 0;   
+    hueSun = 0;
+    sat = 100;
+    bri = 100;
+  }
 
-    //Heights
-    let heightSky = 0.45+random(0.1);
+  //Heights
+  let heightSky = 0.45+random(0.1);
+  let heightSpace = 1; //0 - top; 1 - middle; 2 - bottom;
+
+  if(random(5) >= 4){
+    heightSky = (round(random()) == 1) ? 0.25+random(0.1) : 0.75+random(0.1); 
+    heightSpace = (heightSky < 0.36) ? 0 : 2;
+  }
   
-    if(random(5) >= 4){
-      heightSky = (round(random()) == 1) ? 0.25+random(0.1) : 0.75+random(0.1); 
-    }
-    
-    let heightMesa = (height*heightSky)-(height*(0.1+random(0.1)));
+  let heightMesa = (height*heightSky)-(height*(0.1+random(0.1)));
 
 //---SKY---
-    let isNight = (random(20) > 19) ? 1 : 0;
-    let styleSky = (random(10) < 7) ? 0 : 1;
-    
-    if(styleSky == 1){
-      styleSky = (round(random()) == 1) ? 1 : 2;
-    }
+  let isNight = (random(20) > 19) ? 1 : 0;
+  let styleSky = (random(10) < 7) ? 0 : 1;
+  
+  if(styleSky == 1){
+    styleSky = (round(random()) == 1) ? 1 : 2;
+  }
 
-    noStroke();
+  noStroke();
 
-    if(isNight == 1){
-      fill(0);     
-    }
-    else{
-      fill(color(hueSky,sat,bri));
-    }
+  if(isNight == 1){
+    fill(0);     
+  }
+  else{
+    fill(color(hueSky,sat,bri));
+  }
 
-    rect(0,0,width,height);
+  rect(0,0,width,height);
 
-    switch(styleSky){
-      case 1:
-        drawSun((width/10)*(2+ceil(random(7))),(heightMesa/8)*(1+ceil(random(6))), [hueSun, sat, bri]);
-      break;
+  switch(styleSky){
+    case 1:
+      drawSun((width/10)*(2+ceil(random(7))),(heightMesa/8)*(1+ceil(random(6))), [hueSun, sat, bri]);
+    break;
 
-      case 2:
-        drawMist(0,0,width,height*heightSky,100*heightSky);
-      break;
-    }
+    case 2:
+      drawMist(0,0,width,height*heightSky,100*heightSky);
+    break;
+  }
 
 //---BACKGROUND---
-    if(round(random()) == 1){
+  const treeNum = ceil(random(4)); 
+  const styleTree = ceil(random(3));
+  let styleBack = (random() == 1) ? 0 : 1;
+
+  if(styleBack == 1){
+    styleBack = (round(random()) == 1) ? 1 : 2;  
+  }
+
+  switch(styleBack){
+    case 1:
       drawMesa(heightMesa, height*heightSky, 30, [hueMesa, sat, bri]);
-    }
+    break;
+
+    case 2:
+      for(let i = 0; i < treeNum; i++){
+        if(random() > 0.4){
+          drawTree(((width/treeNum)*i)+random((width/treeNum)*0.66), height*heightSky, 10+random(10), 45+random(30), [hueMesa, sat, bri], [hueSun, sat, bri], styleTree);
+        }
+      }
+    break;
+  }
 
 //---MIDGROUND---  
-    noStroke();
-    fill(color(hueGround,sat,bri));
-    drawGround(0,height*heightSky,width,height,36);
+  noStroke();
+  fill(color(hueGround,sat,bri));
+  drawGround(0,height*heightSky,width,height,36);
 
-    if(random(5) > 4){
-      drawLake(100+random(400),height*heightSky+50+random(150), 10, 20, 8+random(8), 1+random(2), 1, [hueSky, sat, bri], [hueMesa, sat, bri]);
-    }
+  if(random(5) > 4 && heightSpace != 2){
+    drawLake(100+random(400),height*heightSky+50+random(150), 10, 20, 8+random(8), 1+random(2), 1, [hueSky, sat, bri], [hueMesa, sat, bri]);
+  }
 
 //---FOREGROUND---
-    let hasVeranda = (heightSky >= 0.36) ? 1 : 0;
+  let hasVeranda = (heightSky >= 0.36) ? 1 : 0;
 
-    if(hasVeranda == 1){
-      hasVeranda = (random(20) > 19) ? 1 : 0;
-    }
+  if(hasVeranda == 1){
+    hasVeranda = (random(20) > 19) ? 1 : 0;
+  }
 
-    if(hasVeranda == 1){
-      drawVeranda([hueMesa, sat, bri]);
-    }
+  if(hasVeranda == 1){
+    drawVeranda([hueMesa, sat, bri]);
+  }
 }
 
 //Draw (wholes)
@@ -143,7 +163,7 @@ function drawSun(x, y, col){
         let y1 = y+(((40+random(20))*sunSize)*sin(i+rayOff));
         let x2 = x+(((190+random(20))*sunSize)*cos(i+rayOff));
         let y2 = y+(((190+random(20))*sunSize)*sin(i+rayOff));
-        lineWobble(x1, y1, x2, y2, 0, 20);
+        lineWobble(x1, y1, x2, y2, 0, 20, 1.25);
       }
 
       for(let i = 0; i < 360; i += rayNum){
@@ -151,7 +171,7 @@ function drawSun(x, y, col){
         let y1 = y+(((30+random(20))*sunSize)*sin(i+(rayNum/2)+rayOff));
         let x2 = x+(((120+random(20))*sunSize)*cos(i+(rayNum/2)+rayOff));
         let y2 = y+(((120+random(20))*sunSize)*sin(i+(rayNum/2)+rayOff));
-        lineWobble(x1, y1, x2, y2, 0, 20);
+        lineWobble(x1, y1, x2, y2, 0, 20, 1);
       }
 
     break;
@@ -301,7 +321,7 @@ function drawMesa(y1, y2, res, col){
       push();
 
       stroke(0);
-      lineWobble(sliceX[i]-depth3D,sliceY[i],sliceX[i+1]-depth3D,sliceY[i+1],0,3);
+      lineWobble(sliceX[i]-depth3D,sliceY[i],sliceX[i+1]-depth3D,sliceY[i+1],0,3,1);
 
       pop();
   }
@@ -333,7 +353,7 @@ function drawMesa(y1, y2, res, col){
 
       stroke(0);
       //Draw outlines
-      lineWobble(sliceX[i],sliceY[i],sliceX[i+1],sliceY[i+1],0,3);
+      lineWobble(sliceX[i],sliceY[i],sliceX[i+1],sliceY[i+1],0,3,1.25);
 
       //Draw stripe-shading
       if(isShaded == 1 && shadeX[i] != -1 && shadeY[i] != -1){
@@ -344,7 +364,7 @@ function drawMesa(y1, y2, res, col){
             let xx = lerp(sliceX[i],sliceX[i+1],(1/shadeNum)*j);
             let yy = lerp(sliceY[i],sliceY[i+1],(1/shadeNum)*j);
             
-            lineWobble(xx+(2-random(4)),yy+(2+random(5)),xx+(2-random(4)),y2-(2-random(5)),0,2);
+            lineWobble(xx+(2-random(4)),yy+(2+random(5)),xx+(2-random(4)),y2-(2-random(5)),0,2,1.25);
           }
         }
 
@@ -368,6 +388,86 @@ function drawMesa(y1, y2, res, col){
 
       pop();
   }
+}
+
+function drawTree(x, y, w, h, col, col2, style){
+  const ridgeNum = 4+ceil(random(8));
+  const shrubNum = ceil(random(4));
+  
+  push();
+  
+  //Trunk fill
+  fill(color(col[0], col[1], col[2]));
+  noStroke();
+  
+  beginShape();
+  vertex(x-(w/2),y);
+  vertex(x-(w/3),y-h);
+  vertex(x+(w/3),y-h);
+  vertex(x+(w/2),y);
+  endShape(CLOSE);
+  
+  //Trunk outline
+  noFill();
+  lineWobble(x-(w/2),y,x-(w/3),y-h,0,3,2);
+  
+  for(let i = 0; i < ridgeNum; i++){
+    let ridgeHeight = y-(i*(h/ridgeNum));
+    let ridgeX = lerp(x-(w/2),x-(w/3),i/ridgeNum);
+    
+    lineWobble(ridgeX,ridgeHeight,ridgeX+random(w/2),ridgeHeight,0,2,1.25);
+  }
+  
+  lineWobble(x+(w/2),y,x+(w/3),y-h,0,3,1.25);
+
+  //Topiary
+  let new_y = y;
+  let wScale = (round(random()) == 1) ? 0 : 0.1+random(0.3);
+  let hScale = (wScale == 1) ? 0 : 0.1+random(0.3);
+
+  switch(style){
+    case 1: //Shrubs
+      new_y = y;
+  
+      for(let i = 0; i < shrubNum; i++){
+        let r = 15-((15/shrubNum)*i);
+        
+        ellipseWobble(x+(2.5-random(5)), new_y-h, r, r*2, 1, 1.2, 1.125, [col2[0], col2[1], col2[2]], 0);    
+        new_y -= (r*1.2)*1.5;
+        noiseSeed(random(9999999));
+      }
+    break;
+
+    case 2: //Fuzzy
+      wScale = (round(random()) == 1) ? 0 : 0.1+random(0.3);
+      hScale = (wScale == 1) ? 0 : 0.1+random(0.3);
+
+      ellipseWobble(x+(1.25-random(2.5)), y-h, 15, 30, 1+wScale, 1+hScale, 5, [col2[0], col2[1], col2[2]], 0);
+      noiseSeed(random(9999999));
+    break;
+
+    case 3: //Crown
+      wScale = 2+random(3);
+      new_y = y-(20+random(15));
+
+      lineWobble(x-((w/2)*wScale),y-h+3,x-((w/2)*wScale),new_y-h,0,5,1.25);
+      lineWobble(x-((w/2)*wScale),y-h+3,x+((w/2)*wScale),y-h+3,0,5,1.25);
+      lineWobble(x+((w/2)*wScale),y-h+3,x+((w/2)*wScale),new_y-h,0,5,1.25);
+      lineWobble(x-((w/2)*wScale),new_y-h,x,new_y-(h*0.66),0,5,1.25);
+      lineWobble(x+((w/2)*wScale),new_y-h,x,new_y-(h*0.66),0,5,1.25);
+
+      fill(color([col2[0], col2[1], col2[2]]));
+      beginShape();
+      vertex(x-((w/2)*wScale),y-h+3);
+      vertex(x-((w/2)*wScale),new_y-h);
+      vertex(x,new_y-(h*0.66));
+      vertex(x+((w/2)*wScale),new_y-h);
+      vertex(x+((w/2)*wScale),y-h+3);
+      endShape(CLOSE);
+    break;
+  }
+
+  pop();
 }
 
 function drawGround(x1, y1, x2, y2, res){
@@ -684,14 +784,14 @@ function drawVeranda(col){
   pop();
 
   //Draw outline
-  lineWobble(margin,margin*2,margin,height,0,20);
+  lineWobble(margin,margin*2,margin,height,0,20,1.25);
   if(styleMargin == 0){
     bezierQuadraticWobble(margin,margin*2,margin,margin,margin*2,margin,0,20);
   }
   else{
     bezierQuadraticWobble(margin,margin*2,margin*2,margin*2,margin*2,margin,0,20);    
   }
-  lineWobble(margin*2,margin,width-(margin*2),margin,0,20);
+  lineWobble(margin*2,margin,width-(margin*2),margin,0,20,1.25);
 
   if(styleMargin == 0){
     bezierQuadraticWobble(width-margin,margin*2,width-margin,margin,width-(margin*2),margin,0,20);
@@ -699,7 +799,7 @@ function drawVeranda(col){
   else{
     bezierQuadraticWobble(width-margin,margin*2,width-(margin*2),margin*2,width-(margin*2),margin,0,20);
   }
-  lineWobble(width-margin,margin*2,width-margin,height,0,20);
+  lineWobble(width-margin,margin*2,width-margin,height,0,20,1.25);
 
   //Draw baubles
   push();
@@ -720,10 +820,10 @@ function drawVeranda(col){
   for(let i = 0; i < baubleNum+1; i++){
     let x = (width/(baubleNum+2))*(i+1);
     let y = margin/2;
-    lineWobble(x-(10*baubleSize),y,x,y-(10*baubleSize),0,2);
-    lineWobble(x,y-(10*baubleSize),x+(10*baubleSize),y,0,2);
-    lineWobble(x+(10*baubleSize),y,x,y+(10*baubleSize),0,2);
-    lineWobble(x,y+(10*baubleSize),x-(10*baubleSize),y,0,2);
+    lineWobble(x-(10*baubleSize),y,x,y-(10*baubleSize),0,2,1.25);
+    lineWobble(x,y-(10*baubleSize),x+(10*baubleSize),y,0,2,1.25);
+    lineWobble(x+(10*baubleSize),y,x,y+(10*baubleSize),0,2,1.25);
+    lineWobble(x,y+(10*baubleSize),x-(10*baubleSize),y,0,2,1.25);
   }
 }
 
@@ -773,20 +873,20 @@ function bezierQuadraticWobble(x1, y1, cx, cy, x2, y2, gap, res){
   }
 }
 
-function lineWobble(x1, y1, x2, y2, gap, res) {
+function lineWobble(x1, y1, x2, y2, gap, res, weight) {
   let new_x = x1;
   let old_x = new_x;
   let new_y = y1;
   let old_y = new_y;
 
-  stroke(0); //Black
+  stroke(0);
 
   for (let i = 0; i < res; i++) {
     new_x = lerp(x1, x2, (i+1)/res)+(1-random(2));
     new_y = lerp(y1, y2, (i+1)/res)+(1-random(2));
     
-    if(random(1) > gap){
-      strokeWeight(1.25+random(0.5));
+    if(random() > gap){
+      strokeWeight(weight+random(weight/3));
       line(old_x,old_y,new_x,new_y);
     }
     
