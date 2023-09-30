@@ -4,7 +4,8 @@
   -> Different sky styles (waves, clouds, rain, moon)
   -> Different background objects (trees, different mesas)
   -> Foreground objects (paths, pools of water)
-  -> Frames (cliff edge, looking out of window / stables)
+  -> Frames (cliff edge, looking out of window / veranda)
+    -> Add plants to veranda scene
   -> Numbers
 
 */
@@ -21,10 +22,10 @@ function setup() {
 function draw() {
 //---VARIABLES---
     //Colours    
-    let hueSky = random(360); //Random hue
-    let hueGround = hueSky+180; //Opposite colour ground
+    let hueSky = random(360);
+    let hueGround = hueSky+180;
 
-    if(hueGround > 360){ //Wrap opposite colour
+    if(hueGround > 360){
       hueGround -= 360;
     }
 
@@ -49,8 +50,7 @@ function draw() {
       heightSky = (round(random()) == 1) ? 0.25+random(0.1) : 0.75+random(0.1); 
     }
     
-    let heightMesa = (height*heightSky)-(height*(0.1+random(0.1))); //Height of the mesa
-
+    let heightMesa = (height*heightSky)-(height*(0.1+random(0.1)));
 
 //---SKY---
     let isNight = (random(20) > 19) ? 1 : 0;
@@ -73,7 +73,7 @@ function draw() {
 
     switch(styleSky){
       case 1:
-        drawSun((width/10)*(2+ceil(random(7))),(heightMesa/8)*(1+ceil(random(6))), hueSun, sat, bri);
+        drawSun((width/10)*(2+ceil(random(7))),(heightMesa/8)*(1+ceil(random(6))), [hueSun, sat, bri]);
       break;
 
       case 2:
@@ -81,15 +81,19 @@ function draw() {
       break;
     }
 
-//---MESAS---
+//---BACKGROUND---
     if(round(random()) == 1){
-      drawMesa(heightMesa, height*heightSky, 30, hueMesa, sat, bri);
+      drawMesa(heightMesa, height*heightSky, 30, [hueMesa, sat, bri]);
     }
 
-//---GROUND---  
+//---MIDGROUND---  
     noStroke();
     fill(color(hueGround,sat,bri));
     drawGround(0,height*heightSky,width,height,36);
+
+    if(random(5) > 4){
+      drawLake(100+random(400),height*heightSky+50+random(150), 10, 20, 8+random(8), 1+random(2), 1, [hueSky, sat, bri], [hueMesa, sat, bri]);
+    }
 
 //---FOREGROUND---
     let hasVeranda = (heightSky >= 0.36) ? 1 : 0;
@@ -99,13 +103,13 @@ function draw() {
     }
 
     if(hasVeranda == 1){
-      drawVeranda(hueMesa, sat, bri);
+      drawVeranda([hueMesa, sat, bri]);
     }
 }
 
 //Draw (wholes)
 
-function drawSun(x, y, hue, sat, bri){
+function drawSun(x, y, col){
   let styleSun  = (round(random()) == 1) ? 1 : 0; 
 
   if(styleSun == 1){
@@ -119,20 +123,20 @@ function drawSun(x, y, hue, sat, bri){
 
   switch(styleSun){
     case 0:
-      circleWobble(x, y, 20*sunSize, 30*sunSize, 1, hue, sat, bri, 0);  
+      ellipseWobble(x, y, 20*sunSize, 30*sunSize, 1, 1, 1, [col[0],col[1],col[2]], 0);  
     break;
 
     case 1:
       for(let i = 0; i < ringNum; i++){
         let gap = (1/ringNum) * (i+1);
-        circleWobble(x, y, (20*(i+2))*sunSize, (30*(i+2))*sunSize, 1 ,-1, -1, -1, gap);  
+        ellipseWobble(x, y, (20*(i+2))*sunSize, (30*(i+2))*sunSize, 1, 1, 1, [-1,-1,-1], gap);  
       }
 
-      circleWobble(x,y,10*sunSize,20*sunSize,1,hue, sat, bri, 0); 
+      ellipseWobble(x, y, 10*sunSize, 20*sunSize, 1, 1, 1, [col[0],col[1],col[2]], 0); 
     break;
 
     case 2:
-      circleWobble(x,y,20*sunSize,30*sunSize,1,hue, sat, bri, 0);  
+      ellipseWobble(x, y, 20*sunSize, 30*sunSize, 1, 1, 1, [col[0],col[1],col[2]], 0);  
 
       for(let i = 0; i < 360; i += rayNum){
         let x1 = x+(((40+random(20))*sunSize)*cos(i+rayOff));
@@ -152,29 +156,31 @@ function drawSun(x, y, hue, sat, bri){
 
     break;
   }
+
+  noiseSeed(random(999999));
 }
 
 function drawMist(x1, y1, x2, y2, res){
-  let inc = 0.5; //Random increments
-  let gap = 0; //Gap
+  let inc = 0.5;
+  let gap = 0; 
   let new_x = x1;
   let old_x = new_x+(inc-random(inc*2));
   let new_y = lerp(y1,y2,(i+2)/res);
   let old_y = new_y+(inc-random(inc*2));
   
-  stroke(0); //Black
+  stroke(0);
   
   for(var i = 0; i < res; i++){
     for(var j = 0; j < res; j++){
       new_x = lerp(x1,x2,(j+1)/res)+(inc-random(inc*2));
       new_y = lerp(y1,y2,(i+1)/res)+(inc-random(inc*2));
 
-      if(gap == 0){ //If no gap...
-        strokeWeight(0.75+random(0.5)); //...vary stroke length
-        line(old_x,old_y,new_x,new_y); //...draw line...
+      if(gap == 0){ 
+        strokeWeight(0.75+random(0.5));
+        line(old_x,old_y,new_x,new_y);
 
-        if(random(50) >= 49){ //...then 1/50 chance for there to be a gap
-          gap = ceil(random(3)); //Gap lasts for a variable length of time
+        if(random(50) >= 49){ 
+          gap = ceil(random(3));
         }
       }
       else{
@@ -187,12 +193,12 @@ function drawMist(x1, y1, x2, y2, res){
 
     old_x = x1;
     old_y = lerp(y1,y2,(i+2)/res);
-    gap = 0; //Reset gap so new line doesn't start w/a break
+    gap = 0;
     stroke(0+random(10));
   }  
 }
 
-function drawMesa(y1, y2, res, hue, sat, bri){
+function drawMesa(y1, y2, res, col){
 //---VARIABLES---
   const mesaNum = 1+floor(random(3)); //Minimum 1; maximum 4 mesas
   const isMesaStart = round(random());
@@ -264,8 +270,8 @@ function drawMesa(y1, y2, res, hue, sat, bri){
   
 //---DRAWING (3D)---
   const is3D = round(random());
-  const col = color(hue,sat,bri);
-  const col3D = (hue == 0) ? color(hue,sat,0) : color(hue,sat-20,bri-25) ;
+  const colMesa = color([col[0],col[1],col[2]]);
+  const col3D = (col[0] == 0) ? color(col[0],col[1],0) : color(col[0],col[1]-20,col[2]-25);
 
   //Draw 3D
   if(is3D == 1){
@@ -305,7 +311,7 @@ function drawMesa(y1, y2, res, hue, sat, bri){
   //Draw block fill
   push();
 
-  fill(col);
+  fill(colMesa);
   beginShape();
 
   for(let i = 0; i < sliceNum; i++){
@@ -491,18 +497,163 @@ function drawDashes(x1, y1, x2, y2, dir){
   line(midX2,midY2,midX2+strokeX,midY2+strokeY);
 }
 
-function drawVeranda(hue, sat, bri){
+function drawLake(x, y, rMin, rMax, w, h, noiseMax, col, col2){
+  const lakeDepth = (random(20) < 19) ? 10+random(15) : 200;
+  const ridgeNum = ceil(random(2));
+  const colRidge = (col2[0] == 0) ? color(col2[0],col2[1],100) : color(col2[0],col2[1]-20,col2[2]-25);
+  let ridgeCon = 0;
+  
+  let offsetX = map(cos(0),-1,1,0,noiseMax);
+  let offsetY = map(sin(0),-1,1,0,noiseMax);
+  let r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+  let new_x = (r*w) * cos(0);
+  let new_y = (r*h) * sin(0);
+  let old_x = new_x;
+  let old_y = new_y;
+
+  lakeCanvas = createGraphics(width,height);
+  angleMode(RADIANS);
+
+  lakeCanvas.push();
+  lakeCanvas.fill(colRidge);
+  lakeCanvas.rect(0,0,width,height);
+  
+  lakeCanvas.translate(x,y);
+  
+  //Lower ring outline
+  for(let i = 0; i < TWO_PI; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+    
+    //Draw ring
+    lakeCanvas.strokeWeight(1.25+random(0.5));
+    lakeCanvas.line(old_x,old_y+lakeDepth,new_x,new_y+lakeDepth);
+    
+    //Draw ridges
+    lakeCanvas.strokeWeight(0.75+random(0.25));
+    let wob_new_x = old_x;
+    let wob_old_x = wob_new_x;
+    let wob_new_y = old_y;
+    let wob_old_y = wob_new_y;
+    let wob_res = lakeDepth/5;
+
+    if(ridgeCon % ridgeNum == 0){
+      for (let j = 0; j < wob_res; j++) {
+        wob_new_x = lerp(old_x, old_x, (j+1)/wob_res)+(1-random(2));
+        wob_new_y = lerp(old_y, old_y+lakeDepth, (j+1)/wob_res)+(1-random(2));
+
+        if(random() > 0.1){
+          lakeCanvas.line(wob_old_x,wob_old_y,wob_new_x,wob_new_y);
+        }
+
+        wob_old_x = wob_new_x;
+        wob_old_y = wob_new_y;
+      }
+    }
+
+    old_x = new_x;
+    old_y = new_y;
+    ridgeCon += 1;
+  }
+  
+  //Lower ring fill
+  lakeCanvas.fill(color(col[0],col[1],col[2]));
+  lakeCanvas.beginShape();
+
+  for(let i = 0; i < TWO_PI; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+    lakeCanvas.vertex(new_x,new_y+lakeDepth);  
+  }
+
+  lakeCanvas.endShape(CLOSE);
+  
+  offsetX = map(cos(0),-1,1,0,noiseMax);
+  offsetY = map(sin(0),-1,1,0,noiseMax);
+  r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+  old_x = (r*w) * cos(0);
+  old_y = (r*h) * sin(0);
+
+  //Upper ring fill
+  let old_x2 = (r*(w*40)) * cos(0); 
+  let old_y2 = (r*(h*40)) * sin(0);
+  let new_x2 = old_x2; 
+  let new_y2 = old_y2;
+  
+  lakeCanvas.erase();
+  lakeCanvas.beginShape(QUADS);
+  
+  for(let i = 0; i < TWO_PI+1; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+    
+    new_x2 = (r*(w*40)) * cos(i); 
+    new_y2 = (r*(h*40)) * sin(i); 
+    
+    lakeCanvas.vertex(old_x2,old_y2);
+    lakeCanvas.vertex(new_x2,new_y2);    
+    lakeCanvas.vertex(new_x,new_y);  
+    lakeCanvas.vertex(old_x,old_y);
+
+    old_x = new_x;
+    old_y = new_y;
+    old_x2 = new_x2;
+    old_y2 = new_y2;
+  }
+  
+  lakeCanvas.endShape(CLOSE);
+  lakeCanvas.noErase();
+  
+  //Upper ring outline
+  offsetX = map(cos(0),-1,1,0,noiseMax);
+  offsetY = map(sin(0),-1,1,0,noiseMax);
+  r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+  old_x = (r*w) * cos(0);
+  old_y = (r*h) * sin(0);
+
+  for(let i = 0; i < TWO_PI+1; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+    
+    lakeCanvas.strokeWeight(1.25+random(0.5));
+    lakeCanvas.line(old_x,old_y,new_x,new_y);
+
+    old_x = new_x;
+    old_y = new_y;
+  }
+  
+  lakeCanvas.pop();
+  
+  image(lakeCanvas,0,0);
+  
+  angleMode(DEGREES);
+  noiseSeed(random(999999));
+}
+
+function drawVeranda(col){
   const margin = (width/10)+10-random(20);
   const styleMargin = round(random());
-  const col = (hue == 0) ? color(hue,sat,0) : color(hue,sat-20,bri-25);
-  const colBauble = (hue == 0) ? color(255,sat,255) : color(hue,sat-20,bri-40);
+  const colVeranda = (col[0] == 0) ? color(col[0],col[1],0) : color(col[0],col[1]-20,col[2]-25);
+  const colBauble = (col[0] == 0) ? color(255,col[1],255) : color(col[0],col[1]-20,col[2]-40);
   const baubleNum = 1+floor(random(4));
   const baubleSize = 0.5+random(1.5);
 
   //Draw fill
   push();
   noStroke();
-  fill(col);
+  fill(colVeranda);
   beginShape();
   vertex(0,0);
   vertex(0,height);
@@ -644,12 +795,12 @@ function lineWobble(x1, y1, x2, y2, gap, res) {
   }
 }
 
-function circleWobble(x, y, rMin, rMax, noiseMax, hue, sat, bri, gap){
+function ellipseWobble(x, y, rMin, rMax, w, h, noiseMax, col, gap){
   let offsetX = map(cos(0),-1,1,0,noiseMax);
   let offsetY = map(sin(0),-1,1,0,noiseMax);
   let r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
-  let new_x = r * cos(0);
-  let new_y = r * sin(0);
+  let new_x = (r*w) * cos(0);
+  let new_y = (r*h) * sin(0);
   let old_x = new_x;
   let old_y = new_y;
 
@@ -665,8 +816,8 @@ function circleWobble(x, y, rMin, rMax, noiseMax, hue, sat, bri, gap){
     offsetX = map(cos(i),-1,1,0,noiseMax);
     offsetY = map(sin(i),-1,1,0,noiseMax);
     r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
-    new_x = r * cos(i);
-    new_y = r * sin(i);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
     
     if(random() > gap){
       strokeWeight(1.25+random(0.5));
@@ -678,16 +829,16 @@ function circleWobble(x, y, rMin, rMax, noiseMax, hue, sat, bri, gap){
     
   }
   
-  if(hue != -1){
-    fill(color(hue, sat, bri));
+  if(col[0] != -1){
+    fill(color(col[0], col[1], col[2]));
     beginShape();
     
     for(let i = 0; i < TWO_PI; i += 0.1){
       offsetX = map(cos(i),-1,1,0,noiseMax);
       offsetY = map(sin(i),-1,1,0,noiseMax);
       r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
-      new_x = r * cos(i);
-      new_y = r * sin(i);
+      new_x = (r*w) * cos(i);
+      new_y = (r*h) * sin(i);
       vertex(new_x,new_y);  
     }
     
