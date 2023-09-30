@@ -112,7 +112,8 @@ function draw() {
   drawGround(0,height*heightSky,width,height,36);
 
   if(random(5) > 4 && heightSpace != 2){
-    drawLake(100+random(400),height*heightSky+50+random(150), 10, 20, 8+random(8), 1+random(2), 1, [hueSky, sat, bri], [hueMesa, sat, bri]);
+    let lakeY = (height*heightSky) + (height-(height*heightSky))/2 + ( ((height-(height*heightSky))/8) - ((height-(height*heightSky))/4) ); //Halway between skyline + bottom + random 1/4 of the distance
+    drawLake(100+random(400),lakeY, 10, 20, 8+random(8), 1+random(2), 1, [hueSky, sat, bri], [hueMesa, sat, bri]);
   }
 
 //---FOREGROUND---
