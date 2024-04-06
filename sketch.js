@@ -1,6 +1,9 @@
 p5.disableFriendlyErrors = true;
 let cnvLine;
 let cnvFill;
+let cnvShadeLight;
+let cnvShadeMid;
+let cnvShadeDark;
 
 function setup() {
   createCanvas(900, 900);
@@ -13,11 +16,18 @@ function draw() {
   //VARIABLES (canvases)
   cnvLine = createGraphics(width,height);
   cnvFill = createGraphics(width,height);
+  cnvShadeLight = createGraphics(width,height);
+  cnvShadeMid = createGraphics(width,height);
+  cnvShadeDark = createGraphics(width,height);
+  setupShade();
   cnvLine.stroke(0);
+  cnvFill.noStroke();
+  cnvFill.fill(0);
   background(255);
 
   //VARIABLES (constants)
   const cTYPE = Math.round(Math.random()); //0 = sharp; 1 = blur
+  const cSHADE = Math.round(Math.random()-0.25); //0 = no shade; 1 = shade
   const cTHRESHOLD = 0.725+random(0.125);
   const cBLUR = Math.floor(random(3));
   const cWEIGHT = 2;
@@ -60,11 +70,9 @@ function draw() {
     }
   }
 
-  let typeBack = (Math.round(Math.random()) == 1) ? 0 : 1; //0 - nothing; 1 - mesa; 2 - trees
+  typeSun = 0;
 
-  if(typeBack == 1){
-    typeBack = (Math.random() >= 0.66) ? 1 : 2;  
-  }
+  let typeBack = weightedRandom({"none":0.5, "mesa":0.3, "trees":0.1, "treesSmall":0.1});
 
   let heightMesa = (height*heightSky)-(height*(0.1+random(0.1)));
 
@@ -83,12 +91,12 @@ function draw() {
   //Background
   switch(typeBack){
     //Mesas
-    case 1:
-      drawMesa(heightMesa,height*heightSky,cWEIGHT,45);
+    case "mesa":
+      drawMesa(heightMesa,height*heightSky,45,cSHADE,cWEIGHT);
     break;
 
     //Trees
-    case 2:
+    case "trees":
       horizonRand = shuffleArray(horizonRand);
 
       for(let i = 1; i < horizonPlace.length-1; i++){
@@ -96,18 +104,43 @@ function draw() {
           let i2 = horizonRand[i];
           let treeOff = random((width/horizonPlace.length)*0.66);
           let treeX = ((width/horizonPlace.length)*i2)+treeOff;
-          let treeY = bezierPoint(height*heightSky,height*heightSky+cGROUND1.y,height*heightSky-cGROUND2.y,height*heightSky,treeX/width);
+          let treeY = bezierPoint(height*heightSky,(height*heightSky)+cGROUND1.y,(height*heightSky)-cGROUND2.y,height*heightSky,treeX/width);
 
           if(Math.random() > 0.5){
-            drawTree(treeX,treeY,15+random(15),66+random(45),cTREESTYLE,cWEIGHT);
+            drawTree(treeX,treeY,15+random(15),66+random(45),cTREESTYLE,cSHADE,cWEIGHT);
             horizonPlace[i2] = treeOff;
           }
         }
       }
     break;
+
+    //Small trees
+    case "treesSmall":
+      let newTreeNum = Math.ceil((cTREENUM*2.5)+(cTREENUM*(Math.random()*2)));
+
+      for(let i = 0; i < newTreeNum; i++){
+        let treeOff = random((width/newTreeNum)*0.66);
+        let treeX = ((width/newTreeNum)*i)+treeOff;
+        let treeY = bezierPoint(height*heightSky,(height*heightSky)+cGROUND1.y,(height*heightSky)-cGROUND2.y,height*heightSky,treeX/width);
+
+        if(Math.random() > 0.5){
+          let treeY2 = treeY-25-(Math.random()*35);
+          let treeH = 8+(Math.random()*10);
+          let treeW = 8+(Math.random()*10);
+
+          lineWobble(treeX,treeY,treeX,treeY2,0,10,cWEIGHT);
+
+          if(cSHADE == 1){
+            ellipseShade(treeX,treeY2-10,1,1,treeH,treeW,5,1,0,2);
+          }
+
+          ellipseWobble(treeX,treeY2-10,1,1,treeH,treeW,5,0,1,1,1,cWEIGHT);
+        }
+      }
+    break;
   }
 
-  //Midgrounds
+  //Midground
   horizonPlace[sunSlot] = 0; //Reset
   let isPath  = (Math.random() >= 0.8) ? 1 : 0;
   let pathOff = random((width/horizonPlace.length)*0.33);
@@ -130,18 +163,28 @@ function draw() {
     }
   }
 
-  drawGround(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,30,cWEIGHT);
+  drawGround(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,45,cWEIGHT); //res = 30
 
   if(isPath == 1){
-    drawPath(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,pathOrigin,pathOff,cWEIGHT);
+    drawPath(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,pathOrigin,pathOff,cSHADE,cWEIGHT);
   }
-  //drawVeranda(cWEIGHT);
+
+  //Foreground
+  let hasVeranda = (heightSky >= 0.36) ? 1 : 0;
+
+  if(hasVeranda == 1){
+    hasVeranda = (random(20) > 19) ? 1 : 0;
+  }
+
+  if(hasVeranda == 1){
+    drawVeranda(cWEIGHT);
+  }
 
   //--PROCESSING--
-  /*if(cTYPE == 0){
+  if(Math.random() <= 0.1){//Black dots
     for(let i = 0; i < width; i += width/20){
       for(let j = 0; j < height; j += height/20){
-        if(Math.round(Math.random() <= 0.2)){
+        if(Math.random() <= 0.15){
           cnvLine.push();
           cnvLine.strokeWeight(cWEIGHT*(1-random(0.5)));
           cnvLine.point(i+(10-random(20)),j+(10-random(20)));
@@ -149,7 +192,7 @@ function draw() {
         }
       }
     }
-  }*/
+  }
 
   switch(cBLUR){
     case 0: drawingContext.filter = 'blur(1px)'; break;
@@ -163,6 +206,12 @@ function draw() {
 
   filter(THRESHOLD,cTHRESHOLD);
 
+  if(cSHADE == 1){
+    blendMode(DARKEST);
+    image(cnvFill,0,0);
+    blendMode(BLEND);
+  }
+
   if(cTYPE == 1){
     filter(BLUR,1); //Modulate this
   }
@@ -171,8 +220,8 @@ function draw() {
       stroke(255);
       strokeWeight(1);
 
-      for(let i = 0; i < width; i += 1){
-        for(let j = 0; j < height; j += 1){
+      for(let i = 0; i < width; i++){
+        for(let j = 0; j < height; j++){
           if(Math.round(Math.random() <= cSTATIC)){
             point(i,j);
           }
@@ -180,22 +229,6 @@ function draw() {
       }
     }
   }
-
-  /*push();
-
-  blendMode(DARKEST);
-  fill(128);
-  noStroke();
-  rect(0,0,width,height);
-
-  for(let i = 0; i < width; i += width/20){
-    for(let j = 0; j < height; j += height/20){
-      fill(64+random(128));
-      ellipse(i,j,random(width/5),random(width/5));
-    }
-  }
-
-  pop();*/
 }
 
 //Functions (drawing; whole)
@@ -264,11 +297,11 @@ function drawSun(x, y, type, weight){
   let rayOff = random(rayNum);
 
   switch(type){
-    case 0:
-      ellipseWobble(x, y, 20*sunSize, 30*sunSize, 1, 1, 1, 0, 1, 1, weight);  
+    case 0: //Normal
+      ellipseWobble(x, y, 20*sunSize, 30*sunSize, 1, 1, 1, 0, 1, 1, 1, weight);  
     break;
 
-    case 1:
+    case 1: //Ripple
       for(let i = 0; i < ringNum; i++){
         let gap = (1/ringNum) * (i+1);
         ellipseWobble(x, y, (20*(i+2))*sunSize, (30*(i+2))*sunSize, 1, 1, 1, gap, 0, 1, 0, weight);  
@@ -277,7 +310,7 @@ function drawSun(x, y, type, weight){
       ellipseWobble(x, y, 10*sunSize, 20*sunSize, 1, 1, 1, 0, 1, 1, 1, weight); 
     break;
 
-    case 2:
+    case 2: //Rays
       ellipseWobble(x, y, 20*sunSize, 30*sunSize, 1, 1, 1, 0, 1, 1, 1, weight);  
 
       for(let i = 0; i < 360; i += rayNum){
@@ -299,7 +332,7 @@ function drawSun(x, y, type, weight){
   }
 }
 
-function drawMesa(y1, y2, weight, res){
+function drawMesa(y1, y2, res, shade, weight){
 //---VARIABLES---
   const mesaNum = 1+Math.floor(random(3)); //Minimum 1; maximum 4 mesas
   const isMesaStart = Math.round(Math.random());
@@ -334,8 +367,8 @@ function drawMesa(y1, y2, weight, res){
   let mesaTop = y1+Math.ceil(random((y2-y1)/3));
   let mesaBottom = y2+(100-random(120));
 
-  const isShaded = Math.round(Math.random());
-  const styleShade = Math.round(Math.random());
+  const isTex = Math.round(Math.random());
+  const styleTex = Math.round(Math.random());
   let shadeX = [];
   let shadeY = [];
   shadeX[0] = 0;
@@ -376,7 +409,7 @@ function drawMesa(y1, y2, weight, res){
   if(is3D == 1){
     let depth3D = 6+Math.ceil(random(16));
 
-    //Draw 3D block fill
+    //Erase 3D (line)
     cnvLine.push();
     cnvLine.erase();
     cnvLine.beginShape();
@@ -396,10 +429,31 @@ function drawMesa(y1, y2, weight, res){
   
     cnvLine.endShape(CLOSE);
     cnvLine.noErase();
-  
     cnvLine.pop();
 
-    //Draw 3D outline
+    //Erase 3D (fill)
+    cnvFill.push();
+    cnvFill.erase();
+    cnvFill.beginShape();
+  
+    for(let i = 0; i < sliceNum; i++){
+      if(sliceY[i] < sliceY[i+1]-15){
+        cnvFill.vertex(sliceX[i],sliceY[i]);
+      }
+      
+      cnvFill.vertex(sliceX[i]-depth3D,sliceY[i]);
+    }
+  
+    cnvFill.vertex(width,sliceY[sliceNum]);
+    cnvFill.vertex(width,height);
+    cnvFill.vertex(0,height);
+    cnvFill.vertex(0,sliceY[0]);
+  
+    cnvFill.endShape(CLOSE);
+    cnvFill.noErase();
+    cnvFill.pop();
+
+    //Draw 3D (outline)
     for(let i = 0; i < sliceNum; i++){
       cnvLine.push();
       if(sliceY[i] < sliceY[i+1]-15){
@@ -411,10 +465,37 @@ function drawMesa(y1, y2, weight, res){
       }
       cnvLine.pop();
     }
+
+    //Draw 3D (fill)
+    if(shade > 0){
+      cnvFill.push();
+      cnvFill.beginClip();
+      cnvFill.beginShape();
+    
+      for(let i = 0; i < sliceNum; i++){
+        if(sliceY[i] < sliceY[i+1]-15){
+          cnvFill.vertex(sliceX[i],sliceY[i]);
+        }
+        
+        cnvFill.vertex(sliceX[i]-depth3D,sliceY[i]);
+      }
+    
+      cnvFill.vertex(width,sliceY[sliceNum]);
+      cnvFill.vertex(width,height);
+      cnvFill.vertex(0,height);
+      cnvFill.vertex(0,sliceY[0]);
+    
+      cnvFill.endShape(CLOSE);
+      cnvFill.endClip();
+
+      drawShade(3);
+
+      cnvFill.pop();
+    }
   }
 
 //---DRAWING NORMAL---
-  //Draw block fill
+  //Erase mesa (line)
   cnvLine.push();
   cnvLine.erase();
   cnvLine.beginShape();
@@ -433,8 +514,27 @@ function drawMesa(y1, y2, weight, res){
 
   cnvLine.pop();
 
+  //Erase mesa (fill)
+  cnvFill.push();
+  cnvFill.erase();
+  cnvFill.beginShape();
+
+  for(let i = 0; i < sliceNum; i++){
+    cnvFill.vertex(sliceX[i],sliceY[i]);
+  }
+
+  cnvFill.vertex(width,sliceY[sliceNum]);
+  cnvFill.vertex(width,height);
+  cnvFill.vertex(0,height);
+  cnvFill.vertex(0,sliceY[0]);
+
+  cnvFill.endShape(CLOSE);
+  cnvFill.noErase();
+
+  cnvFill.pop();
+
   //Draw dots
-  if(isShaded == 1 && styleShade == 1){
+  if(isTex == 1 && styleTex == 1){
     cnvLine.push();
     cnvLine.beginClip();
     cnvLine.beginShape();
@@ -465,8 +565,8 @@ function drawMesa(y1, y2, weight, res){
     lineWobble(sliceX[i],sliceY[i],sliceX[i+1],sliceY[i+1],0,3,weight*0.66);
 
     //Draw stripe-shading
-    if(isShaded == 1 && shadeX[i] != -1 && shadeY[i] != -1){
-      if(styleShade == 0){
+    if(isTex == 1 && shadeX[i] != -1 && shadeY[i] != -1){
+      if(styleTex == 0){
         let shadeNum = 1+Math.ceil(random(2));
 
         for(let j = 0; j < shadeNum; j++){
@@ -480,9 +580,31 @@ function drawMesa(y1, y2, weight, res){
 
     cnvLine.pop();
   }
+
+  //Draw fill
+  if(shade == 1 && isTex == 0){
+    cnvFill.push();
+    cnvFill.beginClip();
+    cnvFill.beginShape();
+
+    for(let i = 0; i < sliceNum; i++){
+      cnvFill.vertex(sliceX[i],sliceY[i]);
+    }
+  
+    cnvFill.vertex(width,sliceY[sliceNum]);
+    cnvFill.vertex(width,height);
+    cnvFill.vertex(0,height);
+    cnvFill.vertex(0,sliceY[0]);
+    cnvFill.endShape(CLOSE);
+    cnvFill.endClip();
+
+    drawShade(2);
+
+    cnvFill.pop();
+  }
 }
 
-function drawTree(x, y, w, h, style, weight){
+function drawTree(x, y, w, h, style, shade, weight){
   const ridgeNum = 4+Math.ceil(random(8));
   const shrubNum = Math.ceil(random(4));
   
@@ -494,8 +616,28 @@ function drawTree(x, y, w, h, style, weight){
   cnvLine.vertex(x-(w/3),y-h);
   cnvLine.vertex(x+(w/3),y-h);
   cnvLine.vertex(x+(w/2),y);
+
   cnvLine.endShape(CLOSE);
   cnvLine.noErase();
+
+  //Trunk shade
+  if(shade == 1){
+    cnvFill.push();
+    cnvFill.beginClip();
+    cnvFill.beginShape();
+  
+    cnvFill.vertex(x-(w/2),y);
+    cnvFill.vertex(x-(w/3),y-h);
+    cnvFill.vertex(x+(w/3),y-h);
+    cnvFill.vertex(x+(w/2),y);
+  
+    cnvFill.endShape(CLOSE);
+    cnvFill.endClip();
+
+    drawShade(2);
+
+    cnvFill.pop();
+  }
   
   //Trunk outline
   lineWobble(x-(w/2),y,x-(w/3),y-h,0,3,weight);
@@ -520,8 +662,13 @@ function drawTree(x, y, w, h, style, weight){
   
       for(let i = 0; i < shrubNum; i++){
         let r = 20-((20/shrubNum)*i);
-        
-        ellipseWobble(x+(2.5-random(5)), new_y-h, r, r*2, 1, 1.2, 1.125,0,1,1,1,weight);    
+        let x_pos = x+(2.5-random(5));
+
+        if(shade == 1){
+          ellipseShade(x_pos,new_y-h, r, r*2, 1, 1.2, 1.125,1,0,1);
+        }
+
+        ellipseWobble(x_pos, new_y-h, r, r*2, 1, 1.2, 1.125,0,1,1,1,weight);    
         new_y -= (r*1.2)*1.5;
       }
     break;
@@ -530,12 +677,35 @@ function drawTree(x, y, w, h, style, weight){
       wScale = (Math.round(Math.random()) == 1) ? 0 : 0.1+random(0.3);
       hScale = (wScale == 1) ? 0 : 0.1+random(0.3);
 
-      ellipseWobble(x+(1.25-random(2.5)), y-h, 25, 45, 1+wScale, 1+hScale, 5,0,1,1,1,weight);
+      let x_pos = x+(1.25-random(2.5));
+
+      if(shade == 1){
+        ellipseShade(x_pos,y-h,25,45,1+wScale,1+hScale,5,1,0,1);
+      }
+
+      ellipseWobble(x_pos,y-h,25,45,1+wScale,1+hScale,5,0,1,1,1,weight);
     break;
 
     case 3: //Crown
       wScale = 2+random(3);
       new_y = y-(30+random(20)); //y-(20+random(15));
+
+      if(shade == 1){
+        cnvFill.push();
+        cnvFill.beginClip();
+        cnvFill.beginShape();
+        cnvFill.vertex(x-((w/2)*wScale),y-h+3);
+        cnvFill.vertex(x-((w/2)*wScale),new_y-h);
+        cnvFill.vertex(x,new_y-(h*0.66));
+        cnvFill.vertex(x+((w/2)*wScale),new_y-h);
+        cnvFill.vertex(x+((w/2)*wScale),y-h+3);
+        cnvFill.endShape(CLOSE);
+        cnvFill.endClip();
+
+        drawShade(1);
+
+        cnvFill.pop();
+      }
 
       cnvLine.erase();
       cnvLine.beginShape();
@@ -559,14 +729,21 @@ function drawTree(x, y, w, h, style, weight){
       hScale = 0.1+random(0.3);
       let xx = 1.25-random(2.5);
       let yy = -10-random(10);
-      let xadd = 7+random(10);
-      let yadd = 10+random(15);
+      let xadd = 10+random(7);
+      let yadd = 15+random(10);//10+random(15);
 
       let offsetX = map(cos(0),-1,1,0,1);
       let offsetY = map(sin(0),-1,1,0,1);
       let r = map(noise(offsetX, offsetY),0,1,25,45);
       let circ_x = (r*(0.66+wScale)) * cos(0);
       let circ_y = (r*(1+hScale)) * sin(0);
+
+      let cb_shade = Math.random();
+
+      //Inside
+      if(shade == 1){
+        ellipseShade(x+xx,y-h,25,45,0.66+wScale,1+hScale,1,1,0,1);
+      }
 
       ellipseWobble(x+xx,y-h,25,45,0.66+wScale,1+hScale,1,0,2,1,0,weight);
 
@@ -607,7 +784,67 @@ function drawTree(x, y, w, h, style, weight){
 
       cnvLine.pop();
 
-      ellipseWobble(x+xx,y-h,25,45,0.66+wScale,1+hScale,1,0,0,1,1,weight);
+      //Outline
+      ellipseWobble(x+xx,y-h,25,45,0.66+wScale,1+hScale,1,0,0,1,0,weight);
+
+      //Shade strip
+      if(shade == 1 || cb_shade >= 0.75){ //So either global shading, or 1/4 chance
+        angleMode(RADIANS);
+
+        cnvFill.push();
+        cnvFill.translate(x+xx,y-h);
+        cnvFill.beginClip();
+        cnvFill.beginShape();
+  
+        for(let i = 0; i < TWO_PI+0.1; i += 0.1){
+          offsetX = map(cos(i),-1,1,0,1);
+          offsetY = map(sin(i),-1,1,0,1);
+          r = map(noise(offsetX, offsetY),0,1,25,45);
+          circ_x = (r*(0.66+wScale)) * cos(i);
+          circ_y = (r*(1+hScale)) * sin(i);
+          cnvFill.vertex(circ_x,circ_y);  
+        }
+  
+        cnvFill.endShape();
+        cnvFill.endClip();
+
+        cnvFill.translate(-(x+xx),-(y-h));
+  
+        angleMode(DEGREES);
+        
+        cnvFill.beginShape();
+        
+        cnvFill.vertex(x+xx-(xadd*5),y-h-yadd);
+        cnvFill.vertex(x+xx-(xadd*4),y-h);
+        cnvFill.vertex(x+xx-(xadd*3),y-h-yadd);
+        cnvFill.vertex(x+xx-(xadd*2),y-h);
+        cnvFill.vertex(x+xx-xadd,y-h-yadd);
+        cnvFill.vertex(x+xx,y-h);
+        cnvFill.vertex(x+xx+xadd,y-h-yadd);
+        cnvFill.vertex(x+xx+(xadd*2),y-h);
+        cnvFill.vertex(x+xx+(xadd*3),y-h-yadd);
+        cnvFill.vertex(x+xx+(xadd*4),y-h);
+        cnvFill.vertex(x+xx+(xadd*5),y-h-yadd);
+
+        cnvFill.vertex(x+xx+(xadd*5),y-h-yadd-(yy));
+        cnvFill.vertex(x+xx+(xadd*4),y-h-(yy));
+        cnvFill.vertex(x+xx+(xadd*3),y-h-yadd-(yy));
+        cnvFill.vertex(x+xx+(xadd*2),y-h-(yy));
+        cnvFill.vertex(x+xx+xadd,y-h-yadd-(yy));
+        cnvFill.vertex(x+xx,y-h-(yy));
+        cnvFill.vertex(x+xx-xadd,y-h-yadd-(yy));
+        cnvFill.vertex(x+xx-(xadd*2),y-h-(yy));
+        cnvFill.vertex(x+xx-(xadd*3),y-h-yadd-(yy));  
+        cnvFill.vertex(x+xx-(xadd*4),y-h-(yy));
+        cnvFill.vertex(x+xx-(xadd*5),y-h-yadd-(yy));  
+        cnvFill.vertex(x+xx-(xadd*5),y-h-yadd);
+
+        cnvFill.endShape(CLOSE);
+  
+        cnvFill.pop();
+      }
+
+      noiseSeed(random(9999999));
     break;
   }
 }
@@ -615,10 +852,13 @@ function drawTree(x, y, w, h, style, weight){
 function drawGround(x1, y1, cx1, cy1, cx2, cy2, x2, y2, res, weight){ 
   //Variables
   const cSTYLE = Math.floor(random(3)); //0 = nothing; 1 = dashes; 2 = repeating lines
-  const cHAS_GAPS = Math.round(random());
-  const cHAS_GRASS = Math.round(random());
+  const cHAS_GAPS = Math.round(Math.random());
+  const cHAS_GRASS = Math.round(Math.random());
   const cGRASS_NUM = 1+Math.ceil(random(4));
   const cDASH_DIR = 225;
+
+  let groundFill = Math.round(Math.random());
+  groundFill = (groundFill == 1) ? 0 : 1+Math.round(Math.random());
   
   let t = 0;
   let new_x = bezierPoint(x1,x1+cx1,x2-cx2,x2,t)+(1-random(2));
@@ -632,11 +872,11 @@ function drawGround(x1, y1, cx1, cy1, cx2, cy2, x2, y2, res, weight){
     gap[i] = 0;
   }
 
-  //Crop sky
+  //Erase (lines & fill)
   cnvLine.erase();
   cnvLine.beginShape();
 
-  for(i = 0; i < res+1; i++){
+  for(let i = 0; i < res+1; i++){
     cnvLine.vertex(bezierPoint(x1,x1+cx1,x2-cx2,x2,i/res),bezierPoint(y1,y1+cy1,y2-cy2,y2,i/res));
   }
 
@@ -646,6 +886,20 @@ function drawGround(x1, y1, cx1, cy1, cx2, cy2, x2, y2, res, weight){
 
   cnvLine.endShape();
   cnvLine.noErase();
+
+  cnvFill.erase();
+  cnvFill.beginShape();
+
+  for(let i = 0; i < res+1; i++){
+    cnvFill.vertex(bezierPoint(x1,x1+cx1,x2-cx2,x2,i/res),bezierPoint(y1,y1+cy1,y2-cy2,y2,i/res));
+  }
+
+  cnvFill.vertex(width,height);
+  cnvFill.vertex(0,height);
+  cnvFill.vertex(0,bezierPoint(y1,y1+cy1,y2-cy2,y2,0));
+
+  cnvFill.endShape();
+  cnvFill.noErase();
 
   //Draw outline
   for(let i = 0; i < res+1; i++){
@@ -714,18 +968,66 @@ function drawGround(x1, y1, cx1, cy1, cx2, cy2, x2, y2, res, weight){
         new_x = bezierPoint(x1,x1+cx1,x2-cx2,x2,t)+(0.5-random(1));
         new_y = bezierPoint(y1,y1+cy1,y2-cy2,y2,t)+(0.5-random(1))+yy;//(j*10);
 
-        cnvLine.strokeWeight((weight+random(weight/3)/5)-(j/lineRepeat));
+        if(gap[k] == 0){
+          cnvLine.strokeWeight((weight+random(weight/3)/5)-(j/lineRepeat));
+          cnvLine.line(old_x,old_y,new_x,new_y);
 
-        cnvLine.line(old_x,old_y,new_x,new_y);
+          if(cHAS_GAPS == 1 && Math.random() > 1-(0.15*j)){
+            let gapDistance = Math.ceil(random(j+1)/(0.5+random(1.5)));
+
+            for(let l = 0; l < gapDistance; l++){
+              gap[k+(l+1)] = 1;
+            }
+          }
+        }
 
         old_x = new_x;
         old_y = new_y;      
       }
+
+      for(let l = 0; l < res+1; l++){
+        if(l == 0){
+          if(cHAS_GAPS == 1 && Math.random() > 1-(0.15*j)){
+            let gapDistance = Math.ceil(random(j+1)/(0.5+random(1.5)));
+
+            for(let m = 0; m < gapDistance; m++){
+              gap[l+(m+1)] = 1;
+            }
+            
+            l = gapDistance+1;
+          }
+          else{
+            gap[l] = 0;  
+          }
+        }
+        else{
+          gap[l] = 0;
+        }
+      }
     }
+  }
+
+  //Draw fill
+  if(groundFill > 0){
+    cnvFill.push();
+    cnvFill.beginClip();
+    cnvFill.beginShape();
+
+    for(let i = 0; i < res+1; i++){
+      cnvFill.vertex(bezierPoint(x1,x1+cx1,x2-cx2,x2,i/res),bezierPoint(y1,y1+cy1,y2-cy2,y2,i/res));
+    }
+
+    cnvFill.vertex(width,height);
+    cnvFill.vertex(0,height);
+    cnvFill.vertex(0,bezierPoint(y1,y1+cy1,y2-cy2,y2,0));
+    cnvFill.endShape();
+    cnvFill.endClip();
+    drawShade(groundFill-1);
+    cnvFill.pop();
   }
 }
 
-function drawPath(x1, y1, cx1, cy1, cx2, cy2, x2, y2, pathOrigin, pathOff, weight){
+function drawPath(x1, y1, cx1, cy1, cx2, cy2, x2, y2, pathOrigin, pathOff, shade, weight){
   let pathStart = (pathOrigin+pathOff)/width;
   let pathEnd = 0.02+random(0.02);
   let pathStart1 = [bezierPoint(x1,x1+cx1,x2-cx2,x2,pathStart),bezierPoint(y1,y1+cy1,y2-cy2,y2,pathStart)];
@@ -739,39 +1041,48 @@ function drawPath(x1, y1, cx1, cy1, cx2, cy2, x2, y2, pathOrigin, pathOff, weigh
     pathEnd2 = [width,height-150];
   }
 
-
-
-  /*cnvLine.push();
-  cnvLine.fill(128);
-  cnvLine.beginShape();
-
-  for(i = 0; i < res+1; i++){
-    cnvLine.vertex(bezierPoint(x1,x1+cx1,x2-cx2,x2,i/res),bezierPoint(y1,y1+cy1,y2-cy2,y2,i/res));
-  }
-
-  cnvLine.vertex(width,height);
-  cnvLine.vertex(0,height);
-  cnvLine.vertex(0,bezierPoint(y1,y1+cy1,y2-cy2,y2,0));
-
-  cnvLine.endShape();
-  cnvLine.pop();*/
-
+  //Clip path (outline)
   cnvLine.erase();
   cnvLine.beginShape();
 
   cnvLine.vertex(pathStart1[0],pathStart1[1]+5);
   cnvLine.vertex(pathStart2[0],pathStart2[1]+5);
-  cnvLine.quadraticVertex(lerp(pathStart2[0],pathEnd2[0],0.15),lerp(pathStart2[1],pathEnd2[1],0.66),pathEnd2[0],pathEnd2[1]);
-  cnvLine.vertex(0,height);
+  cnvLine.quadraticVertex(lerp(pathStart2[0],pathEnd2[0],0.15),lerp(pathStart2[1],pathEnd2[1],0.75),pathEnd2[0],pathEnd2[1]);
+  if(pathStart < 0.5){
+    cnvLine.vertex(width,height);
+  }
+  else{
+    cnvLine.vertex(0,height);
+  }
   cnvLine.vertex(pathEnd1[0],pathEnd1[1]);
-  cnvLine.quadraticVertex(lerp(pathStart1[0],pathEnd1[0],0.15),lerp(pathStart1[1],pathEnd1[1],0.66),pathStart1[0],pathStart1[1]);
+  cnvLine.quadraticVertex(lerp(pathStart1[0],pathEnd1[0],0.15),lerp(pathStart1[1],pathEnd1[1],0.75),pathStart1[0],pathStart1[1]);
 
   cnvLine.endShape(CLOSE);
   cnvLine.noErase();
 
+  //Clip path (fill)
+  cnvFill.fill(255);
+  cnvFill.beginShape();
+
+  cnvFill.vertex(pathStart1[0],pathStart1[1]+5);
+  cnvFill.vertex(pathStart2[0],pathStart2[1]+5);
+  cnvFill.quadraticVertex(lerp(pathStart2[0],pathEnd2[0],0.15),lerp(pathStart2[1],pathEnd2[1],0.75),pathEnd2[0],pathEnd2[1]);
+  if(pathStart < 0.5){
+    cnvFill.vertex(width,height);
+  }
+  else{
+    cnvFill.vertex(0,height);
+  }
+  cnvFill.vertex(pathEnd1[0],pathEnd1[1]);
+  cnvFill.quadraticVertex(lerp(pathStart1[0],pathEnd1[0],0.15),lerp(pathStart1[1],pathEnd1[1],0.75),pathStart1[0],pathStart1[1]);
+
+  cnvFill.endShape(CLOSE);
+  cnvFill.fill(0);
+
+  //Draw path (outline)
   bezierQuadraticWobble(pathStart1[0],pathStart1[1],lerp(pathStart1[0],pathEnd1[0],0.15),lerp(pathStart1[1],pathEnd1[1],0.75),pathEnd1[0],pathEnd1[1],0,60,weight*0.66);
 
-  if(pathStart < 0.5){
+  if(pathStart < 0.5){//Ridge
     bezierQuadraticWobble(pathStart2[0]+(ridgeDist*0.33),pathStart2[1],lerp(pathStart2[0]+(ridgeDist*0.33),pathEnd2[0],0.15),lerp(pathStart2[1],pathEnd2[1]+ridgeDist,0.75),pathEnd2[0],pathEnd2[1]+ridgeDist,0,60,weight*0.66);
   }
   else{
@@ -779,15 +1090,70 @@ function drawPath(x1, y1, cx1, cy1, cx2, cy2, x2, y2, pathOrigin, pathOff, weigh
   }
 
   bezierQuadraticWobble(pathStart2[0],pathStart2[1],lerp(pathStart2[0],pathEnd2[0],0.15),lerp(pathStart2[1],pathEnd2[1],0.75),pathEnd2[0],pathEnd2[1],0,60,weight*0.66);
+
+  //Draw path (fill)
+  if(shade == 1){
+    //Ridge
+    cnvFill.push();
+    cnvFill.beginClip();
+    cnvFill.beginShape();
+
+    if(pathStart < 0.5){
+      cnvFill.vertex(pathStart2[0]+(ridgeDist*0.33),pathStart2[1]);
+      cnvFill.quadraticVertex(lerp(pathStart2[0]+(ridgeDist*0.33),pathEnd2[0],0.15),lerp(pathStart2[1],pathEnd2[1]+ridgeDist,0.75),pathEnd2[0],pathEnd2[1]+ridgeDist);
+      cnvFill.vertex(pathEnd2[0],pathEnd2[1]);
+      cnvFill.quadraticVertex(lerp(pathStart2[0],pathEnd2[0],0.15),lerp(pathStart2[1],pathEnd2[1],0.75),pathStart2[0],pathStart2[1]);
+    }
+    else{
+      cnvFill.vertex(pathStart1[0]+(ridgeDist*0.33),pathStart1[1]);
+      cnvFill.quadraticVertex(lerp(pathStart1[0]+(ridgeDist*0.33),pathEnd1[0],0.15),lerp(pathStart1[1],pathEnd1[1]+ridgeDist,0.75),pathEnd1[0],pathEnd1[1]+ridgeDist);
+      cnvFill.vertex(pathEnd1[0],pathEnd1[1]);
+      cnvFill.quadraticVertex(lerp(pathStart1[0],pathEnd1[0],0.15),lerp(pathStart1[1],pathEnd1[1],0.75),pathStart1[0],pathStart1[1]);
+    }
+
+    cnvFill.endShape();
+    cnvFill.endClip();
+
+    drawShade(3);
+
+    cnvFill.pop();
+
+    //Path
+    cnvFill.push();
+    cnvFill.beginClip();
+    cnvFill.beginShape();
+
+    if(pathStart < 0.5){
+      cnvFill.vertex(pathStart2[0]+(ridgeDist*0.33),pathStart2[1]);
+      cnvFill.quadraticVertex(lerp(pathStart2[0]+(ridgeDist*0.33),pathEnd2[0],0.15),lerp(pathStart2[1],pathEnd2[1]+ridgeDist,0.75),pathEnd2[0],pathEnd2[1]+ridgeDist);
+      cnvFill.vertex(width,height);
+      cnvFill.vertex(pathEnd1[0],pathEnd1[1]);
+      cnvFill.quadraticVertex(lerp(pathStart1[0],pathEnd1[0],0.15),lerp(pathStart1[1],pathEnd1[1],0.75),pathStart1[0],pathStart1[1]);
+    }
+    else{
+      cnvFill.vertex(pathStart1[0]+(ridgeDist*0.33),pathStart1[1]);
+      cnvFill.quadraticVertex(lerp(pathStart1[0]+(ridgeDist*0.33),pathEnd1[0],0.15),lerp(pathStart1[1],pathEnd1[1]+ridgeDist,0.75),pathEnd1[0],pathEnd1[1]+ridgeDist);
+      cnvFill.vertex(0,height);
+      cnvFill.vertex(pathEnd2[0],pathEnd2[1]);
+      cnvFill.quadraticVertex(lerp(pathStart2[0],pathEnd2[0],0.15),lerp(pathStart2[1],pathEnd2[1],0.75),pathStart2[0],pathStart2[1]);
+    }
+
+    cnvFill.endShape();
+    cnvFill.endClip();
+
+    drawShade(2);
+
+    cnvFill.pop();
+  }
 }
 
 function drawVeranda(weight){
   const margin = (width/10)+15-random(30);
-  const styleMargin = round(random());
-  const baubleNum = 1+floor(random(4));
+  const styleMargin = Math.round(Math.random());
+  const baubleNum = 1+Math.floor(random(4));
   const baubleSize = 0.5+random(1.5);
 
-  //Cut out
+  //Cut out (line)
   cnvLine.push();
   cnvLine.erase();
   cnvLine.beginShape();
@@ -819,6 +1185,39 @@ function drawVeranda(weight){
   cnvLine.endShape(CLOSE);
   cnvLine.noErase();
   cnvLine.pop();
+
+  //Cut out (fill)
+  cnvFill.push();
+  cnvFill.erase();
+  cnvFill.beginShape();
+  cnvFill.vertex(0,0);
+  cnvFill.vertex(0,height);
+  cnvFill.vertex(margin,height);
+  cnvFill.vertex(margin,margin*2);
+
+  if(styleMargin == 0){
+    cnvFill.quadraticVertex(margin,margin,margin*2,margin); 
+  }
+  else{
+    cnvFill.quadraticVertex(margin*2,margin*2,margin*2,margin);  
+  }
+
+  cnvFill.vertex(width-(margin*2),margin);
+
+  if(styleMargin == 0){
+    cnvFill.quadraticVertex(width-margin,margin,width-margin,margin*2); 
+  }
+  else{
+    cnvFill.quadraticVertex(width-(margin*2),margin*2,width-margin,margin*2);  
+  }
+
+  cnvFill.vertex(width-margin,height);
+  cnvFill.vertex(width,height);
+  cnvFill.vertex(width,0);
+
+  cnvFill.endShape(CLOSE);
+  cnvFill.noErase();
+  cnvFill.pop();
 
   //Draw outline
   lineWobble(margin,margin*2,margin,height,0,20,weight);
@@ -865,6 +1264,26 @@ function drawVeranda(weight){
   }
 }
 
+function drawDashes(x1, y1, x2, y2, dir, weight){
+  let lengthDashes = Math.ceil(random(15))+5;
+
+  let strokeX = (lengthDashes+(2-random(4)))*cos(dir+(0.5-random(1)));
+  let strokeY = (lengthDashes+(2-random(4)))*sin(45+(0.5-random(1)));
+  let midX1 = lerp(x1,x2,0.33);
+  let midX2 = lerp(x1,x2,0.66);
+  let midY1 = lerp(y1,y2,0.33);
+  let midY2 = lerp(y1,y2,0.66);
+
+  cnvLine.strokeWeight((weight*0.66)+random(weight/3));
+  cnvLine.line(x1,y1,x1+strokeX,y1+strokeY);
+
+  strokeX = ((lengthDashes*0.66)+(2-random(4)))*cos(dir+(0.25-random(0.5)));
+  strokeY = ((lengthDashes*0.66)+(2-random(4)))*sin(45+(0.25-random(0.5)));
+
+  cnvLine.strokeWeight((weight*0.33)+random(weight/3));
+  cnvLine.line(midX1,midY1,midX1+strokeX,midY1+strokeY);
+  cnvLine.line(midX2,midY2,midX2+strokeX,midY2+strokeY);
+}
 
 //Functions (drawing; part)
 function bezierWobble(x1, y1, cx1, cy1, cx2, cy2, x2, y2, gap, res, weight){
@@ -1095,25 +1514,117 @@ function poissonDisc(weight){
   }
 }
 
-function drawDashes(x1, y1, x2, y2, dir, weight){
-  let lengthDashes = Math.ceil(random(15))+5;
+//Function (drawing; shading)
+function setupShade(){
+  cnvShadeLight.noStroke();
+  cnvShadeLight.fill(0);
+  cnvShadeMid.noStroke();
+  cnvShadeMid.fill(0);
+  cnvShadeDark.noStroke();
+  cnvShadeDark.fill(0);
 
-  let strokeX = (lengthDashes+(2-random(4)))*cos(dir+(0.5-random(1)));
-  let strokeY = (lengthDashes+(2-random(4)))*sin(45+(0.5-random(1)));
-  let midX1 = lerp(x1,x2,0.33);
-  let midX2 = lerp(x1,x2,0.66);
-  let midY1 = lerp(y1,y2,0.33);
-  let midY2 = lerp(y1,y2,0.66);
+  let sh_l = 6+random(2);
+  let sh_m = 4+random(2);
+  let sh_d = 2+random(2);
 
-  cnvLine.strokeWeight((weight*0.66)+random(weight/3));
-  cnvLine.line(x1,y1,x1+strokeX,y1+strokeY);
+  for(let i = 0; i < width/sh_l; i++){
+    for(let j = 0; j < height/sh_l; j++){
+      if(i % 2 == 0 && j % 2 == 1 || i % 2 == 1 && j % 2 == 0){
+        cnvShadeLight.circle((i*sh_l),(j*sh_l),sh_l*0.5);
+      }
+    }
+  }
 
-  strokeX = ((lengthDashes*0.66)+(2-random(4)))*cos(dir+(0.25-random(0.5)));
-  strokeY = ((lengthDashes*0.66)+(2-random(4)))*sin(45+(0.25-random(0.5)));
+  for(let i = 0; i < width/sh_m; i++){
+    for(let j = 0; j < height/sh_m; j++){
+      if(i % 2 == 0 && j % 2 == 1 || i % 2 == 1 && j % 2 == 0){
+        cnvShadeMid.circle((i*sh_m),(j*sh_m),sh_m*0.66);
+      }
+    }
+  }
 
-  cnvLine.strokeWeight((weight*0.33)+random(weight/3));
-  cnvLine.line(midX1,midY1,midX1+strokeX,midY1+strokeY);
-  cnvLine.line(midX2,midY2,midX2+strokeX,midY2+strokeY);
+  for(let i = 0; i < width/sh_d; i++){
+    for(let j = 0; j < height/sh_d; j++){
+      if(i % 2 == 0 && j % 2 == 1 || i % 2 == 1 && j % 2 == 0){
+        cnvShadeDark.circle((i*sh_d),(j*sh_d),sh_d*0.75);
+      }
+    }
+  }
+}
+
+function drawShade(shade){
+  switch(shade){
+    case 0:
+      cnvFill.image(cnvShadeLight,0,0);
+    break;
+
+    case 1:
+      cnvFill.image(cnvShadeMid,0,0);
+    break;
+
+    case 2:
+      cnvFill.image(cnvShadeDark,0,0);
+    break;
+
+    case 3:
+      cnvFill.rect(0,0,width,height);
+    break;
+  }
+}
+
+function ellipseShade(x, y, rMin, rMax, w, h, noiseMax, cut, reset, shade){
+  angleMode(RADIANS);
+
+  cnvFill.push();
+  cnvFill.translate(x,y);
+
+  //Erase
+  if(cut > 0){//0 = just fill; 1 = erase and fill; 2 = just erase
+    cnvFill.erase();
+    cnvFill.beginShape();
+    
+    for(let ang = 0; ang < TWO_PI+0.1; ang += 0.1){
+      offsetX = map(cos(ang),-1,1,0,noiseMax);
+      offsetY = map(sin(ang),-1,1,0,noiseMax);
+      r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+      new_x = (r*w) * cos(ang);
+      new_y = (r*h) * sin(ang);
+      cnvFill.vertex(new_x,new_y);  
+    }
+    
+    cnvFill.endShape(CLOSE);
+    cnvFill.noErase();
+  }
+
+  //Fill
+  if(cut < 2){
+    cnvFill.beginClip();
+    cnvFill.beginShape();
+    
+    for(let ang = 0; ang < TWO_PI+0.1; ang += 0.1){
+      offsetX = map(cos(ang),-1,1,0,noiseMax);
+      offsetY = map(sin(ang),-1,1,0,noiseMax);
+      r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+      new_x = (r*w) * cos(ang);
+      new_y = (r*h) * sin(ang);
+      cnvFill.vertex(new_x,new_y);  
+    }
+    
+    cnvFill.endShape(CLOSE);
+    cnvFill.endClip();
+
+    cnvFill.translate(-x,-y);
+
+    drawShade(shade);
+  }
+
+  cnvFill.pop();
+
+  angleMode(DEGREES);
+
+  if(reset == 1){
+    noiseSeed(random(9999999));
+  }
 }
 
 //Functions (misc)
@@ -1132,12 +1643,23 @@ function cleanUp(){
     cnvFill.remove();
     cnvFill = null;
   }
+  if (cnvShadeLight) {
+    cnvShadeLight.remove();
+    cnvShadeLight = null;
+  }
+  if (cnvShadeMid) {
+    cnvShadeMid.remove();
+    cnvShadeMid = null;
+  }
+  if (cnvShadeDark) {
+    cnvShadeDark.remove();
+    cnvShadeDark = null;
+  }
 }
 
 function shuffleArray(array) {
   for (var i = array.length - 1; i > 0; i--) { 
  
-      // Generate random number 
       var j = Math.floor(Math.random() * (i + 1));
                  
       var temp = array[i];
@@ -1146,4 +1668,30 @@ function shuffleArray(array) {
   }
      
   return array;
+}
+
+function weightedRandom(obj){
+    // Returns a random property of obj whose property values are all numbers.
+    // The probability of a property being selected is based on its value.
+    // E.g. {foo:5, bar:10} will return bar twice as often as foo.
+    let result = undefined;
+    let total = 0;
+
+    for (const property in obj) {
+        total += obj[property];
+    }
+
+    let index = Math.random()*total;
+
+    for (const property in obj) {
+        const value = obj[property];
+        if (index < value) {
+            result = property;
+            break;
+        } else {
+            index -= value;
+        }
+    }
+
+    return result;
 }
