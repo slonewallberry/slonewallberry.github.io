@@ -72,7 +72,7 @@ function draw() {
 
   typeSun = 0;
 
-  let typeBack = weightedRandom({"none":0.5, "mesa":0.3, "trees":0.1, "treesSmall":0.1});
+  let typeBack = weightedRandom({"none":0.5, "mesa":0.3, "trees":0.1, "treesSmall":0.1, "rocks":0.1});
   let heightMesa = (height*heightSky)-(height*(0.1+random(0.1)));
 
   ///DRAWING
@@ -141,7 +141,13 @@ function draw() {
 
   //Midground
   horizonPlace[sunSlot] = 0; //Reset
-  let typeMid = weightedRandom({"none":0.4, "path":0.2, "pond":0.2, "lake":0.2});
+  let typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1});
+
+  if(typeBack == "rocks"){//Path doesn't look good with rock
+    while(typeMid == "path"){
+      typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1}); 
+    }
+  }
 
   if(heightSpace == 2 && typeMid != "lake"){//Neither ground nor pond work at this height
     typeMid = "none";
@@ -151,6 +157,24 @@ function draw() {
   let pathOrigin = -1;
 
   drawGround(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,45,cWEIGHT); //res = 30
+
+  if(typeBack == "rocks"){
+    horizonRand = shuffleArray(horizonRand);
+
+    for(let i = 1; i < horizonPlace.length-1; i++){
+      if(horizonPlace.filter(i => i > 0).length < cTREENUM){
+        let i2 = horizonRand[i];
+        let treeOff = random((width/horizonPlace.length)*0.66);
+        let treeX = ((width/horizonPlace.length)*i2)+treeOff;
+        let treeY = bezierPoint(height*heightSky,(height*heightSky)+cGROUND1.y,(height*heightSky)-cGROUND2.y,height*heightSky,treeX/width);
+
+        if(Math.random() > 0.5){
+          drawRock(treeX,treeY,15+random(45),15+random(15),cTREESTYLE,cSHADE,cWEIGHT);
+          horizonPlace[i2] = treeOff;
+        }
+      }
+    }
+  }
 
   switch(typeMid){
     case "path":
@@ -186,7 +210,7 @@ function draw() {
   }
 
   if(hasVeranda == 1){
-    drawVeranda(cWEIGHT);
+    drawVeranda(cSHADE, cWEIGHT);
   }
 
   //--PROCESSING--
@@ -215,11 +239,11 @@ function draw() {
 
   filter(THRESHOLD,cTHRESHOLD);
 
-  if(cSHADE == 1){
+  //if(cSHADE == 1){
     blendMode(DARKEST);
     image(cnvFill,0,0);
     blendMode(BLEND);
-  }
+  //}
 
   if(cTYPE == 1){
     filter(BLUR,1); //Modulate this
@@ -858,6 +882,162 @@ function drawTree(x, y, w, h, style, shade, weight){
   }
 }
 
+function drawRock(x, y, w, h, style, shade, weight){
+  let wScale = 1.3+random(0.3);
+  let hScale = 1+random(0.3); 
+  let noiseMax = 2;
+
+  let offsetX = map(cos(0),-1,1,0,noiseMax);
+  let offsetY = map(sin(0),-1,1,0,noiseMax);
+  let r = map(noise(offsetX, offsetY),0,1, 25,45);
+  let circ_x = (r*(wScale)) * cos(0);
+  let circ_y = (r*(hScale)) * sin(0);
+  let old_x = circ_x;
+  let old_y = circ_y;
+
+  angleMode(RADIANS);
+
+  //Erase (outline and fill)
+  cnvLine.push();
+  cnvLine.translate(x,y);
+  cnvLine.erase();
+  cnvLine.beginShape();
+
+  for(let ang = 0; ang < TWO_PI+0.1; ang += 0.1){
+    offsetX = map(cos(ang),-1,1,0,noiseMax);
+    offsetY = map(sin(ang),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,25,45);
+    circ_x = (r*(wScale)) * cos(ang);
+
+    if(ang > PI){
+      circ_y = (r*(hScale)) * sin(ang);
+    }
+    else{
+      circ_y = (r*(hScale/2)) * sin(ang);
+    }
+
+    cnvLine.vertex(circ_x,circ_y);  
+  }
+
+  cnvLine.endShape();
+  cnvLine.noErase();
+  cnvLine.pop();
+
+  cnvFill.push();
+  cnvFill.translate(x,y);
+  cnvFill.erase();
+  cnvFill.beginShape();
+
+  for(let ang = 0; ang < TWO_PI+0.1; ang += 0.1){
+    offsetX = map(cos(ang),-1,1,0,noiseMax);
+    offsetY = map(sin(ang),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,25,45);
+    circ_x = (r*(wScale)) * cos(ang);
+
+    if(ang > PI){
+      circ_y = (r*(hScale)) * sin(ang);
+    }
+    else{
+      circ_y = (r*(hScale/2)) * sin(ang);
+    }
+
+    cnvFill.vertex(circ_x,circ_y);  
+  }
+
+  cnvFill.endShape();
+  cnvFill.noErase();
+  cnvFill.pop();
+
+  //Outline
+  cnvLine.push();
+  cnvLine.translate(x,y);
+  cnvLine.beginShape();
+
+  for(let ang = 0; ang < TWO_PI+0.1; ang += 0.1){
+    offsetX = map(cos(ang),-1,1,0,noiseMax);
+    offsetY = map(sin(ang),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,25,45);
+    circ_x = (r*(wScale)) * cos(ang);
+
+    if(ang > PI){
+      circ_y = (r*(hScale)) * sin(ang);
+      cnvLine.strokeWeight((weight+random(weight/3))*0.66);
+    }
+    else{
+      circ_y = (r*(hScale/2)) * sin(ang);
+      cnvLine.strokeWeight((weight+random(weight/3))*0.5);
+    }
+
+    cnvLine.line(old_x,old_y,circ_x,circ_y);
+
+    old_x = circ_x;
+    old_y = circ_y;
+  }
+
+  cnvLine.endShape();
+  cnvLine.pop();
+
+  //Inside shading
+  cnvLine.push();
+  cnvLine.translate(x,y);
+  cnvLine.beginClip();
+  cnvLine.beginShape();
+
+  for(let ang = 0; ang < TWO_PI+0.1; ang += 0.1){
+    offsetX = map(cos(ang),-1,1,0,noiseMax);
+    offsetY = map(sin(ang),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,25,45);
+    circ_x = (r*(wScale)) * cos(ang);
+
+    if(ang > PI){
+      circ_y = (r*(hScale)) * sin(ang)
+    }
+    else{
+      circ_y = (r*(hScale/2)) * sin(ang);
+    }
+
+    cnvLine.vertex(circ_x,circ_y); 
+  }
+
+  cnvLine.endShape();
+  cnvLine.endClip();
+
+  cnvLine.strokeWeight((weight+random(weight/3))*0.5);
+  circ_x = (r*(wScale)) * cos(0);
+  circ_y = (r*(hScale)) * sin(0);
+  old_x = circ_x;
+  old_y = circ_y;
+
+  for(let ang = 0; ang < TWO_PI+0.1; ang += 0.15){
+    offsetX = map(cos(ang),-1,1,0,noiseMax);
+    offsetY = map(sin(ang),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,25,45);
+    circ_x = (r*(wScale)) * cos(ang);
+
+    let randX = 1-(Math.random()*2);
+    let randY = 1-(Math.random()*2);
+
+    if(ang > PI){
+      circ_y = (r*(hScale)) * sin(ang)
+
+      if(ang > PI/5){
+        cnvLine.line(circ_x,circ_y,circ_x+15+randX,circ_y-15+randY);     
+      }
+    }
+    else{
+      circ_y = (r*(hScale/2)) * sin(ang);
+      
+      cnvLine.line(circ_x,circ_y,circ_x+15+randX,circ_y-15+randY);   
+    }
+  }
+  
+  cnvLine.pop();
+
+  angleMode(DEGREES);
+
+  noiseSeed(random(9999999));
+}
+
 function drawGround(x1, y1, cx1, cy1, cx2, cy2, x2, y2, res, weight){ 
   //Variables
   const cSTYLE = Math.floor(random(3)); //0 = nothing; 1 = dashes; 2 = repeating lines
@@ -1443,11 +1623,15 @@ function drawLake(y1, y2, typeSky, res, weight){
   }
 }
 
-function drawVeranda(weight){
+function drawVeranda(shade, weight){
   const margin = (width/10)+15-random(30);
   const styleMargin = Math.round(Math.random());
   const baubleNum = 1+Math.floor(random(4));
   const baubleSize = 0.5+random(1.5);
+
+  if(shade == 1 && Math.random() >= 0.5){//1 = Walls shaded; 2 = baubles shaded
+    shade++;
+  }
 
   //Cut out (line)
   cnvLine.push();
@@ -1517,6 +1701,7 @@ function drawVeranda(weight){
 
   //Draw outline
   lineWobble(margin,margin*2,margin,height,0,20,weight);
+
   if(styleMargin == 0){
     bezierQuadraticWobble(margin,margin*2,margin,margin,margin*2,margin,0,20,weight);
   }
@@ -1531,27 +1716,81 @@ function drawVeranda(weight){
   else{
     bezierQuadraticWobble(width-margin,margin*2,width-(margin*2),margin*2,width-(margin*2),margin,0,20,weight);
   }
+
   lineWobble(width-margin,margin*2,width-margin,height,0,20,weight);
+
+  //Draw fill
+  if(shade == 1){
+    cnvFill.push();
+    cnvFill.beginClip();
+    cnvFill.beginShape();
+    cnvFill.vertex(0,0);
+    cnvFill.vertex(0,height);
+    cnvFill.vertex(margin,height);
+    cnvFill.vertex(margin,margin*2);
+
+    if(styleMargin == 0){
+      cnvFill.quadraticVertex(margin,margin,margin*2,margin); 
+    }
+    else{
+      cnvFill.quadraticVertex(margin*2,margin*2,margin*2,margin);  
+    }
+
+    cnvFill.vertex(width-(margin*2),margin);
+
+    if(styleMargin == 0){
+      cnvFill.quadraticVertex(width-margin,margin,width-margin,margin*2); 
+    }
+    else{
+      cnvFill.quadraticVertex(width-(margin*2),margin*2,width-margin,margin*2);  
+    }
+
+    cnvFill.vertex(width-margin,height);
+    cnvFill.vertex(width,height);
+    cnvFill.vertex(width,0);
+
+    cnvFill.endShape(CLOSE);
+    cnvFill.endClip();
+
+    drawShade(2);
+
+    cnvFill.pop();
+  }
 
   //Draw baubles
   if(Math.random() > 0.3){
-    /*push();
-    noStroke();
     for(let i = 0; i < baubleNum+1; i++){
       let x = (width/(baubleNum+2))*(i+1);
       let y = margin/2;
-      beginShape();
-      vertex(x-(10*baubleSize),y);
-      vertex(x,y-(10*baubleSize));
-      vertex(x+(10*baubleSize),y);
-      vertex(x,y+(10*baubleSize));
-      endShape(CLOSE);
-    }
-    pop();*/
 
-    for(let i = 0; i < baubleNum+1; i++){
-      let x = (width/(baubleNum+2))*(i+1);
-      let y = margin/2;
+      if(shade == 1){//Cut them out
+        cnvFill.push();
+        cnvFill.erase();
+        cnvFill.beginShape();
+        cnvFill.vertex(x-(10*baubleSize),y);
+        cnvFill.vertex(x,y-(10*baubleSize));
+        cnvFill.vertex(x+(10*baubleSize),y);
+        cnvFill.vertex(x,y+(10*baubleSize));
+        cnvFill.endShape(CLOSE);
+        cnvFill.noErase();
+        cnvFill.pop();
+      }
+      else if(shade == 2){//Colour them in
+        cnvFill.push();
+        cnvFill.beginClip();
+        cnvFill.beginShape();
+        cnvFill.vertex(x-(10*baubleSize),y);
+        cnvFill.vertex(x,y-(10*baubleSize));
+        cnvFill.vertex(x+(10*baubleSize),y);
+        cnvFill.vertex(x,y+(10*baubleSize));
+        cnvFill.endShape(CLOSE);
+        cnvFill.endClip();
+
+        drawShade(2);
+
+        cnvFill.pop();
+      }
+
       lineWobble(x-(10*baubleSize),y,x,y-(10*baubleSize),0,2,weight*0.5);
       lineWobble(x,y-(10*baubleSize),x+(10*baubleSize),y,0,2,weight*0.5);
       lineWobble(x+(10*baubleSize),y,x,y+(10*baubleSize),0,2,weight*0.5);
@@ -1696,7 +1935,6 @@ function ellipseWobble(x, y, rMin, rMax, w, h, noiseMax, gap, cut, drop, reset, 
         if(degrees(ang) > (45-curveInc) && degrees(ang) < (225+curveInc)){
           if(degrees(ang) <= curveMid){
             weightSun = map(degrees(ang),45-curveInc,curveMid,weightMin,weightMax);
-            
           }
           else{
             weightSun = map(degrees(ang),curveMid,225+curveInc,weightMax,weightMin);
