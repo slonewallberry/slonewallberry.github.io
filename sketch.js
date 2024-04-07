@@ -27,7 +27,7 @@ function draw() {
 
   //VARIABLES (constants)
   const cTYPE = Math.round(Math.random()); //0 = sharp; 1 = blur
-  const cSHADE = Math.round(Math.random()-0.25); //0 = no shade; 1 = shade
+  const cSHADE = Math.round(Math.random()*0.75); //0 = no shade; 1 = shade
   const cTHRESHOLD = 0.725+random(0.125);
   const cBLUR = Math.floor(random(3));
   const cWEIGHT = 2;
@@ -73,7 +73,6 @@ function draw() {
   typeSun = 0;
 
   let typeBack = weightedRandom({"none":0.5, "mesa":0.3, "trees":0.1, "treesSmall":0.1});
-
   let heightMesa = (height*heightSky)-(height*(0.1+random(0.1)));
 
   ///DRAWING
@@ -142,9 +141,9 @@ function draw() {
 
   //Midground
   horizonPlace[sunSlot] = 0; //Reset
-  let typeMid = weightedRandom({"none":0.6, "path":0.2, "lake":0.2});
+  let typeMid = weightedRandom({"none":0.4, "path":0.2, "pond":0.2, "lake":0.2});
 
-  if(heightSpace == 2){//Neither ground nor lake work at this height
+  if(heightSpace == 2 && typeMid != "lake"){//Neither ground nor pond work at this height
     typeMid = "none";
   }
   
@@ -169,10 +168,14 @@ function draw() {
       drawPath(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,pathOrigin,pathOff,cSHADE,cWEIGHT);
     break;
 
-    case "lake":
-      let lakeY = (height*heightSky) + (height-(height*heightSky))/2 + ( ((height-(height*heightSky))/8) - ((height-(height*heightSky))/4) ); //Halway between skyline + bottom + random 1/4 of the distance
-      drawLake(100+(Math.random()*(width-200)),lakeY, 10, 20, 8+random(8), 1+random(2), 1);
+    case "pond":
+      let pondY = (height*heightSky) + (height-(height*heightSky))/2 + ( ((height-(height*heightSky))/8) - ((height-(height*heightSky))/4) ); //Halway between skyline + bottom + random 1/4 of the distance
+      drawPond(100+(Math.random()*(width-200)),pondY,10,20,8+random(8),1+random(2),1,cWEIGHT);
     break;
+
+    case "lake":
+      let lakeY = (height*heightSky)+50+(Math.random()*50);
+      drawLake(lakeY,lakeY+20+(Math.random()*50),typeSky,45,cWEIGHT); 
   }
 
   //Foreground
@@ -1153,8 +1156,8 @@ function drawPath(x1, y1, cx1, cy1, cx2, cy2, x2, y2, pathOrigin, pathOff, shade
   }
 }
 
-function drawLake(x, y, rMin, rMax, w, h, noiseMax){
-  const lakeDepth = (random(20) < 19) ? 10+random(15) : 200;
+function drawPond(x, y, rMin, rMax, w, h, noiseMax, weight){
+  const pondDepth = (random(20) < 19) ? 10+random(15) : 200;
   const ridgeNum = Math.ceil(random(2));
   let ridgeCon = 0;
   
@@ -1228,7 +1231,7 @@ function drawLake(x, y, rMin, rMax, w, h, noiseMax){
     r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
     new_x = (r*w) * cos(i);
     new_y = (r*h) * sin(i);
-    cnvFill.vertex(new_x,new_y+lakeDepth);  
+    cnvFill.vertex(new_x,new_y+pondDepth);  
   }
 
   cnvFill.endShape(CLOSE);*/
@@ -1246,7 +1249,7 @@ function drawLake(x, y, rMin, rMax, w, h, noiseMax){
     new_x = (r*w) * cos(i);
     new_y = (r*h) * sin(i);
 
-    cnvLine.strokeWeight(1.25+random(0.5));
+    cnvLine.strokeWeight(weight+random(0.5));
     cnvLine.line(old_x,old_y,new_x,new_y);
     
     old_x = new_x;
@@ -1278,21 +1281,21 @@ function drawLake(x, y, rMin, rMax, w, h, noiseMax){
     new_y = (r*h) * sin(i);
 
     //Ring
-    cnvLine.strokeWeight(1.25+random(0.5));
-    cnvLine.line(old_x,old_y+lakeDepth,new_x,new_y+lakeDepth);
+    cnvLine.strokeWeight(weight+random(0.5));
+    cnvLine.line(old_x,old_y+pondDepth,new_x,new_y+pondDepth);
     
     //Ridges
-    cnvLine.strokeWeight(0.75+random(0.25));
+    cnvLine.strokeWeight((weight*0.66)+random(0.25));
     let wob_new_x = old_x;
     let wob_old_x = wob_new_x;
     let wob_new_y = old_y;
     let wob_old_y = wob_new_y;
-    let wob_res = lakeDepth/5;
+    let wob_res = pondDepth/5;
 
     if(ridgeCon % ridgeNum == 0){
       for (let j = 0; j < wob_res; j++) {
         wob_new_x = lerp(old_x, old_x, (j+1)/wob_res)+(1-random(2));
-        wob_new_y = lerp(old_y, old_y+(lakeDepth-4), (j+1)/wob_res)+(1-random(2));
+        wob_new_y = lerp(old_y, old_y+(pondDepth-4), (j+1)/wob_res)+(1-random(2));
 
         if(Math.random() > 0.1){
           cnvLine.line(wob_old_x,wob_old_y,wob_new_x,wob_new_y);
@@ -1314,6 +1317,130 @@ function drawLake(x, y, rMin, rMax, w, h, noiseMax){
   
   //Reset random seed
   noiseSeed(random(9999999));
+}
+
+function drawLake(y1, y2, typeSky, res, weight){
+  //Set control points for curve
+  let x1 = 0;
+  let x2 = width;
+  let cy = y1; //lerp(y1,y2,0.33+(Math.random()*0.33));
+  let cx = lerp(x1,x2,0.6+(Math.random()*0.2));
+
+  let new_x = x1;
+  let old_x = new_x;
+  let new_y = y1;
+  let old_y = new_y;
+
+  //Erase (lines & fill)
+  cnvLine.erase();
+  cnvLine.beginShape();
+  cnvLine.vertex(x1,y1-20);
+
+  for(let i = 0; i < res+1; i++){
+    new_x = lerp(lerp(x1,cx,(i+1)/res),lerp(cx,x2,(i+1)/res),(i+1)/res)+(1-random(2));
+    new_y = lerp(lerp(y1,cy,(i+1)/res),lerp(cy,y2,(i+1)/res),(i+1)/res)+(1-random(2));
+    
+    cnvLine.vertex(new_x,new_y-20);
+    
+    old_x = new_x;
+    old_y = new_y;
+  }
+
+  cnvLine.vertex(x2,height);
+  cnvLine.vertex(x1,height);
+  cnvLine.vertex(x1,y1);
+
+  cnvLine.endShape();
+  cnvLine.noErase();
+
+  new_x = x1;
+  old_x = new_x;
+  new_y = y1;
+  old_y = new_y;
+
+  cnvFill.erase();
+  cnvFill.beginShape();
+  cnvFill.vertex(x1,y1-20);
+
+  for(let i = 0; i < res+1; i++){
+    new_x = lerp(lerp(x1,cx,(i+1)/res),lerp(cx,x2,(i+1)/res),(i+1)/res)+(1-random(2));
+    new_y = lerp(lerp(y1,cy,(i+1)/res),lerp(cy,y2,(i+1)/res),(i+1)/res)+(1-random(2));
+    
+    cnvFill.vertex(new_x,new_y-20);
+    
+    old_x = new_x;
+    old_y = new_y;
+  }
+
+  cnvFill.vertex(x2,height);
+  cnvFill.vertex(x1,height);
+  cnvFill.vertex(x1,y1);
+
+  cnvFill.endShape();
+  cnvFill.noErase();
+
+  //Shore outline
+  new_x = x1;
+  old_x = new_x;
+  new_y = y1;
+  old_y = new_y;
+
+  for(let i = 0; i < res+1; i++){
+    new_x = lerp(lerp(x1,cx,(i+1)/res),lerp(cx,x2,(i+1)/res),(i+1)/res)+(1-random(2));
+    new_y = lerp(lerp(y1,cy,(i+1)/res),lerp(cy,y2,(i+1)/res),(i+1)/res)+(1-random(2));
+    
+    //Shore
+    cnvLine.strokeWeight(weight+random(weight/3));
+    cnvLine.line(old_x,old_y,new_x,new_y);
+
+    //Ridges
+    if(Math.random() > 0.1){
+      bezierWobble(new_x,new_y-1,-15,-2,15,-10,new_x,new_y-20,0,10,weight*0.5);
+    }
+
+    //Ripple
+    if(Math.random() <= 0.85){
+      cnvLine.strokeWeight((weight+random(weight/3))*0.5);
+      cnvLine.line(old_x,old_y+10,new_x,new_y+10);
+    }
+    
+    old_x = new_x;
+    old_y = new_y;
+  }
+
+  //Water fill
+  new_x = x1;
+  old_x = new_x;
+  new_y = y1;
+  old_y = new_y;
+
+  if(typeSky == 3){ //Night time
+    cnvFill.push();
+    cnvFill.beginClip();
+    cnvFill.beginShape();
+    cnvFill.vertex(x1,y1);
+
+    for(let i = 0; i < res+1; i++){
+      new_x = lerp(lerp(x1,cx,(i+1)/res),lerp(cx,x2,(i+1)/res),(i+1)/res)+(1-random(2));
+      new_y = lerp(lerp(y1,cy,(i+1)/res),lerp(cy,y2,(i+1)/res),(i+1)/res)+(1-random(2));
+      
+      cnvFill.vertex(new_x,new_y);
+      
+      old_x = new_x;
+      old_y = new_y;
+    }
+
+    cnvFill.vertex(x2,height);
+    cnvFill.vertex(x1,height);
+    cnvFill.vertex(x1,y1);
+
+    cnvFill.endShape();
+    cnvFill.endClip();
+
+    cnvFill.rect(0,0,width,height);
+
+    cnvFill.pop();
+  }
 }
 
 function drawVeranda(weight){
@@ -1695,11 +1822,19 @@ function setupShade(){
   let sh_l = 6+random(2);
   let sh_m = 4+random(2);
   let sh_d = 2+random(2);
+  let wave = Math.round(Math.random());
 
   for(let i = 0; i < width/sh_l; i++){
     for(let j = 0; j < height/sh_l; j++){
       if(i % 2 == 0 && j % 2 == 1 || i % 2 == 1 && j % 2 == 0){
-        cnvShadeLight.circle((i*sh_l),(j*sh_l),sh_l*0.5);
+          if(wave == 1){
+            let xx = (i*sh_l) + 1*cos(i*j*5);
+            let yy = (j*sh_l) + 1*sin(i*j*5); 
+            cnvShadeLight.circle(xx,yy,sh_l*0.5);
+          }
+          else{
+            cnvShadeLight.circle((i*sh_l),(j*sh_l),sh_l*0.5);            
+          }
       }
     }
   }
