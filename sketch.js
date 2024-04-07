@@ -142,31 +142,37 @@ function draw() {
 
   //Midground
   horizonPlace[sunSlot] = 0; //Reset
-  let isPath  = (Math.random() >= 0.8) ? 1 : 0;
+  let typeMid = weightedRandom({"none":0.6, "path":0.2, "lake":0.2});
+
+  if(heightSpace == 2){//Neither ground nor lake work at this height
+    typeMid = "none";
+  }
+  
   let pathOff = random((width/horizonPlace.length)*0.33);
   let pathOrigin = -1;
 
-  if(isPath == 1){
-    horizonRand = shuffleArray(horizonRand);
-
-    for(let i = 1; i < horizonPlace.length-1; i++){
-      let i2 = horizonRand[i];
-
-      if(horizonPlace[i2] == 0 && pathOrigin == -1){
-        horizonPlace[i2] = pathOff;
-        pathOrigin = (width/horizonPlace.length)*i2;
-      }
-    }
-
-    if(heightSpace == 2){
-      isPath = 0;
-    }
-  }
-
   drawGround(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,45,cWEIGHT); //res = 30
 
-  if(isPath == 1){
-    drawPath(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,pathOrigin,pathOff,cSHADE,cWEIGHT);
+  switch(typeMid){
+    case "path":
+      horizonRand = shuffleArray(horizonRand);
+
+      for(let i = 1; i < horizonPlace.length-1; i++){
+        let i2 = horizonRand[i];
+  
+        if(horizonPlace[i2] == 0 && pathOrigin == -1){
+          horizonPlace[i2] = pathOff;
+          pathOrigin = (width/horizonPlace.length)*i2;
+        }
+      }
+  
+      drawPath(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,pathOrigin,pathOff,cSHADE,cWEIGHT);
+    break;
+
+    case "lake":
+      let lakeY = (height*heightSky) + (height-(height*heightSky))/2 + ( ((height-(height*heightSky))/8) - ((height-(height*heightSky))/4) ); //Halway between skyline + bottom + random 1/4 of the distance
+      drawLake(100+(Math.random()*(width-200)),lakeY, 10, 20, 8+random(8), 1+random(2), 1);
+    break;
   }
 
   //Foreground
@@ -1145,6 +1151,169 @@ function drawPath(x1, y1, cx1, cy1, cx2, cy2, x2, y2, pathOrigin, pathOff, shade
 
     cnvFill.pop();
   }
+}
+
+function drawLake(x, y, rMin, rMax, w, h, noiseMax){
+  const lakeDepth = (random(20) < 19) ? 10+random(15) : 200;
+  const ridgeNum = Math.ceil(random(2));
+  let ridgeCon = 0;
+  
+  let offsetX = map(cos(0),-1,1,0,noiseMax);
+  let offsetY = map(sin(0),-1,1,0,noiseMax);
+  let r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+  let new_x = (r*w) * cos(0);
+  let new_y = (r*h) * sin(0);
+  let old_x = new_x;
+  let old_y = new_y;
+
+  angleMode(RADIANS);
+
+  ///Fill
+  cnvFill.push();
+  cnvFill.translate(x,y);
+
+  //Erase fill
+  cnvFill.erase();
+  cnvFill.beginShape();
+
+  for(let i = 0; i < TWO_PI+0.1; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+    cnvFill.vertex(new_x,new_y);  
+  }
+
+  cnvFill.endShape(CLOSE);
+  cnvFill.noErase();
+  
+  //Outer ring (fill)
+  /*cnvFill.beginShape();
+
+  for(let i = 0; i < TWO_PI+0.1; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+    cnvFill.vertex(new_x,new_y);  
+  }
+
+  cnvFill.endShape(CLOSE);
+  
+  //Clipping mask
+  cnvFill.beginClip();
+  cnvFill.beginShape();
+
+  for(let i = 0; i < TWO_PI+0.1; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+    cnvFill.vertex(new_x,new_y);  
+  }
+
+  cnvFill.endShape(CLOSE);
+  cnvFill.endClip();
+  
+  //Lower ring (fill)
+  cnvFill.fill(255);
+  cnvFill.beginShape();
+
+  for(let i = 0; i < TWO_PI+0.1; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+    cnvFill.vertex(new_x,new_y+lakeDepth);  
+  }
+
+  cnvFill.endShape(CLOSE);*/
+  cnvFill.pop();
+  
+  ///Outlines
+  cnvLine.push();
+  cnvLine.translate(x,y);
+  
+  //Outer ring (outline)
+  for(let i = 0; i < TWO_PI+0.1; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+
+    cnvLine.strokeWeight(1.25+random(0.5));
+    cnvLine.line(old_x,old_y,new_x,new_y);
+    
+    old_x = new_x;
+    old_y = new_y;
+  }
+  
+  //Clipping mask
+  cnvLine.beginClip();
+  cnvLine.beginShape();
+
+  for(let i = 0; i < TWO_PI+0.1; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+    cnvLine.vertex(new_x,new_y);  
+  }
+
+  cnvLine.endShape(CLOSE);
+  cnvLine.endClip();
+  
+  //Lower ring (outline)
+  for(let i = 0; i < TWO_PI+0.1; i += 0.1){
+    offsetX = map(cos(i),-1,1,0,noiseMax);
+    offsetY = map(sin(i),-1,1,0,noiseMax);
+    r = map(noise(offsetX, offsetY),0,1,rMin,rMax);
+    new_x = (r*w) * cos(i);
+    new_y = (r*h) * sin(i);
+
+    //Ring
+    cnvLine.strokeWeight(1.25+random(0.5));
+    cnvLine.line(old_x,old_y+lakeDepth,new_x,new_y+lakeDepth);
+    
+    //Ridges
+    cnvLine.strokeWeight(0.75+random(0.25));
+    let wob_new_x = old_x;
+    let wob_old_x = wob_new_x;
+    let wob_new_y = old_y;
+    let wob_old_y = wob_new_y;
+    let wob_res = lakeDepth/5;
+
+    if(ridgeCon % ridgeNum == 0){
+      for (let j = 0; j < wob_res; j++) {
+        wob_new_x = lerp(old_x, old_x, (j+1)/wob_res)+(1-random(2));
+        wob_new_y = lerp(old_y, old_y+(lakeDepth-4), (j+1)/wob_res)+(1-random(2));
+
+        if(Math.random() > 0.1){
+          cnvLine.line(wob_old_x,wob_old_y,wob_new_x,wob_new_y);
+        }
+
+        wob_old_x = wob_new_x;
+        wob_old_y = wob_new_y;
+      }
+    }
+    
+    old_x = new_x;
+    old_y = new_y;
+    ridgeCon += 1;
+  }
+  
+  cnvLine.pop();
+
+  angleMode(DEGREES);
+  
+  //Reset random seed
+  noiseSeed(random(9999999));
 }
 
 function drawVeranda(weight){
