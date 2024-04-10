@@ -45,10 +45,13 @@ function draw() {
   let horizonPlace = [0,0,0,0,0,0];
   let horizonRand = [1,2,3,4,5]; //For shuffling
 
-  if(Math.random() < 0.2){
-    heightSky = (Math.round(random()) == 1) ? 0.25+random(0.1) : 0.75+random(0.1); 
+  if(Math.random() < 0.2){ //1/5 chance to be high or low, rather than middle
+    heightSky = (Math.round(Math.random()) == 1) ? 0.25+(Math.random()*0.1) : 0.75+(Math.random()*0.1); 
     heightSpace = (heightSky < 0.36) ? 0 : 2;
   }
+
+  let yStart = height*heightSky;
+  let yEnd = height*heightSky;
 
   let typeSky = 0; //0 - clear; 1 - waves; 2 - lines; 3 - night
   let typeSun  = (Math.round(Math.random()) == 1) ? 1 : 0; //0 - normal; 1 - rings; 2 - rays
@@ -60,17 +63,10 @@ function draw() {
 
   if(typeSun == 1){
     switch(typeSky){
-      case 0:
-        typeSun = (Math.round(Math.random()) == 1) ? 1 : 2;
-      break;
-
-      case 1: case 2: case 3:
-        typeSun = 0;
-      break;
+      case 0: typeSun = (Math.round(Math.random()) == 1) ? 1 : 2; break;
+      case 1: case 2: case 3: typeSun = 0; break;
     }
   }
-
-  typeSun = 0;
 
   let typeBack = weightedRandom({"none":0.5, "mesa":0.3, "trees":0.1, "treesSmall":0.1, "rocks":0.1});
   let heightMesa = (height*heightSky)-(height*(0.1+random(0.1)));
@@ -103,7 +99,7 @@ function draw() {
           let i2 = horizonRand[i];
           let treeOff = random((width/horizonPlace.length)*0.66);
           let treeX = ((width/horizonPlace.length)*i2)+treeOff;
-          let treeY = bezierPoint(height*heightSky,(height*heightSky)+cGROUND1.y,(height*heightSky)-cGROUND2.y,height*heightSky,treeX/width);
+          let treeY = bezierPoint(yStart,yStart+cGROUND1.y,yEnd-cGROUND2.y,yEnd,treeX/width);
 
           if(Math.random() > 0.5){
             drawTree(treeX,treeY,15+random(15),66+random(45),cTREESTYLE,cSHADE,cWEIGHT);
@@ -120,7 +116,7 @@ function draw() {
       for(let i = 0; i < newTreeNum; i++){
         let treeOff = random((width/newTreeNum)*0.66);
         let treeX = ((width/newTreeNum)*i)+treeOff;
-        let treeY = bezierPoint(height*heightSky,(height*heightSky)+cGROUND1.y,(height*heightSky)-cGROUND2.y,height*heightSky,treeX/width);
+        let treeY = bezierPoint(yStart,yStart+cGROUND1.y,yEnd-cGROUND2.y,yEnd,treeX/width);
 
         if(Math.random() > 0.5){
           let treeY2 = treeY-25-(Math.random()*35);
@@ -143,20 +139,20 @@ function draw() {
   horizonPlace[sunSlot] = 0; //Reset
   let typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1});
 
-  if(typeBack == "rocks"){//Path doesn't look good with rock
+  if(typeBack == "rocks"){ //Path doesn't look good with rock
     while(typeMid == "path"){
       typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1}); 
     }
   }
 
-  if(heightSpace == 2 && typeMid != "lake"){//Neither ground nor pond work at this height
+  if(heightSpace == 2 && typeMid != "lake"){ //Neither ground nor pond work at this height
     typeMid = "none";
   }
   
   let pathOff = random((width/horizonPlace.length)*0.33);
   let pathOrigin = -1;
 
-  drawGround(0,height*heightSky,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,height*heightSky,45,cWEIGHT); //res = 30
+  drawGround(0,yStart,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,yEnd,45,cWEIGHT); //res = 30, then 45
 
   if(typeBack == "rocks"){
     horizonRand = shuffleArray(horizonRand);
@@ -166,10 +162,10 @@ function draw() {
         let i2 = horizonRand[i];
         let treeOff = random((width/horizonPlace.length)*0.66);
         let treeX = ((width/horizonPlace.length)*i2)+treeOff;
-        let treeY = bezierPoint(height*heightSky,(height*heightSky)+cGROUND1.y,(height*heightSky)-cGROUND2.y,height*heightSky,treeX/width);
+        let treeY = bezierPoint(yStart,yStart+cGROUND1.y,yEnd-cGROUND2.y,yEnd,treeX/width);
 
         if(Math.random() > 0.5){
-          drawRock(treeX,treeY,15+random(45),15+random(15),cTREESTYLE,cSHADE,cWEIGHT);
+          drawRock(treeX,treeY,cWEIGHT);
           horizonPlace[i2] = treeOff;
         }
       }
@@ -198,8 +194,9 @@ function draw() {
     break;
 
     case "lake":
-      let lakeY = (height*heightSky)+50+(Math.random()*50);
-      drawLake(lakeY,lakeY+20+(Math.random()*50),typeSky,45,cWEIGHT); 
+      let lakeY = (height*heightSky)+65+(Math.random()*85);
+      let lakeRes = (Math.random() > 0.5) ? 45 : 60;
+      drawLake(lakeY,lakeY+20+(Math.random()*50),typeSky,lakeRes,cWEIGHT); 
   }
 
   //Foreground
@@ -239,11 +236,11 @@ function draw() {
 
   filter(THRESHOLD,cTHRESHOLD);
 
-  //if(cSHADE == 1){
+  if(cSHADE == 1){
     blendMode(DARKEST);
     image(cnvFill,0,0);
     blendMode(BLEND);
-  //}
+  }
 
   if(cTYPE == 1){
     filter(BLUR,1); //Modulate this
@@ -882,7 +879,7 @@ function drawTree(x, y, w, h, style, shade, weight){
   }
 }
 
-function drawRock(x, y, w, h, style, shade, weight){
+function drawRock(x, y, weight){
   let wScale = 1.3+random(0.3);
   let hScale = 1+random(0.3); 
   let noiseMax = 2;
@@ -913,7 +910,7 @@ function drawRock(x, y, w, h, style, shade, weight){
       circ_y = (r*(hScale)) * sin(ang);
     }
     else{
-      circ_y = (r*(hScale/2)) * sin(ang);
+      circ_y = (r*(hScale/2)) * sin(ang)+10;
     }
 
     cnvLine.vertex(circ_x,circ_y);  
@@ -938,7 +935,7 @@ function drawRock(x, y, w, h, style, shade, weight){
       circ_y = (r*(hScale)) * sin(ang);
     }
     else{
-      circ_y = (r*(hScale/2)) * sin(ang);
+      circ_y = (r*(hScale/2)) * sin(ang)+10;
     }
 
     cnvFill.vertex(circ_x,circ_y);  
@@ -1500,6 +1497,8 @@ function drawPond(x, y, rMin, rMax, w, h, noiseMax, weight){
 }
 
 function drawLake(y1, y2, typeSky, res, weight){
+  let h = (res == 45) ? 20 : 10 + (Math.random()*10); //If ridges, always 20; otherwise between 10 and 20
+  
   //Set control points for curve
   let x1 = 0;
   let x2 = width;
@@ -1514,13 +1513,13 @@ function drawLake(y1, y2, typeSky, res, weight){
   //Erase (lines & fill)
   cnvLine.erase();
   cnvLine.beginShape();
-  cnvLine.vertex(x1,y1-20);
+  cnvLine.vertex(x1,y1-h);
 
   for(let i = 0; i < res+1; i++){
     new_x = lerp(lerp(x1,cx,(i+1)/res),lerp(cx,x2,(i+1)/res),(i+1)/res)+(1-random(2));
     new_y = lerp(lerp(y1,cy,(i+1)/res),lerp(cy,y2,(i+1)/res),(i+1)/res)+(1-random(2));
     
-    cnvLine.vertex(new_x,new_y-20);
+    cnvLine.vertex(new_x,new_y-h);
     
     old_x = new_x;
     old_y = new_y;
@@ -1540,13 +1539,13 @@ function drawLake(y1, y2, typeSky, res, weight){
 
   cnvFill.erase();
   cnvFill.beginShape();
-  cnvFill.vertex(x1,y1-20);
+  cnvFill.vertex(x1,y1-h);
 
   for(let i = 0; i < res+1; i++){
     new_x = lerp(lerp(x1,cx,(i+1)/res),lerp(cx,x2,(i+1)/res),(i+1)/res)+(1-random(2));
     new_y = lerp(lerp(y1,cy,(i+1)/res),lerp(cy,y2,(i+1)/res),(i+1)/res)+(1-random(2));
     
-    cnvFill.vertex(new_x,new_y-20);
+    cnvFill.vertex(new_x,new_y-h);
     
     old_x = new_x;
     old_y = new_y;
@@ -1573,9 +1572,24 @@ function drawLake(y1, y2, typeSky, res, weight){
     cnvLine.strokeWeight(weight+random(weight/3));
     cnvLine.line(old_x,old_y,new_x,new_y);
 
-    //Ridges
-    if(Math.random() > 0.1){
-      bezierWobble(new_x,new_y-1,-15,-2,15,-10,new_x,new_y-20,0,10,weight*0.5);
+    switch(res){
+      case 45: //Ridges
+        if(Math.random() > 0.1){
+          bezierWobble(new_x,new_y-1,-15,-2,15,-10,new_x,new_y-20,0,10,weight*0.5);
+        }
+      break;
+
+      case 60: //Slope
+        let slopeX1 = lerp(lerp(x1,cx,(i+0.5)/res),lerp(cx,x2,(i+0.5)/res),(i+0.5)/res)+(1-random(2));
+        let slopeY1 = lerp(lerp(y1,cy,(i+0.5)/res),lerp(cy,y2,(i+0.5)/res),(i+0.5)/res)+(1-random(2));
+        let slopeX2 = lerp(lerp(x1,cx,(i+1.5)/res),lerp(cx,x2,(i+1.5)/res),(i+1.5)/res)+(1-random(2));
+        let slopeY2 = lerp(lerp(y1,cy,(i+1.5)/res),lerp(cy,y2,(i+1.5)/res),(i+1.5)/res)+(1-random(2));
+
+        cnvLine.strokeWeight((weight+random(weight/3))*0.5);
+        cnvLine.line(old_x,old_y-h,new_x,new_y-h);
+        cnvLine.line(old_x,old_y,new_x,new_y-h);
+        cnvLine.line(slopeX1,slopeY1,slopeX2,slopeY2-h);
+      break;
     }
 
     //Ripple
@@ -2060,19 +2074,11 @@ function setupShade(){
   let sh_l = 6+random(2);
   let sh_m = 4+random(2);
   let sh_d = 2+random(2);
-  let wave = Math.round(Math.random());
 
   for(let i = 0; i < width/sh_l; i++){
     for(let j = 0; j < height/sh_l; j++){
       if(i % 2 == 0 && j % 2 == 1 || i % 2 == 1 && j % 2 == 0){
-          if(wave == 1){
-            let xx = (i*sh_l) + 1*cos(i*j*5);
-            let yy = (j*sh_l) + 1*sin(i*j*5); 
-            cnvShadeLight.circle(xx,yy,sh_l*0.5);
-          }
-          else{
-            cnvShadeLight.circle((i*sh_l),(j*sh_l),sh_l*0.5);            
-          }
+        cnvShadeLight.circle((i*sh_l),(j*sh_l),sh_l*0.5);            
       }
     }
   }
