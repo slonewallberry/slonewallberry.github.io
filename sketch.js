@@ -617,7 +617,7 @@ function drawMesa(y1, y2, res, shade, weight){
           let xx = lerp(sliceX[i],sliceX[i+1],(1/shadeNum)*j);
           let yy = lerp(sliceY[i],sliceY[i+1],(1/shadeNum)*j);
           
-          lineWobble(xx+(2-random(4)),yy+(2+random(5)),xx+(2-random(4)),y2-(2-random(5)),0,2,weight*0.66);
+          lineWobble(xx+(2-random(4)),yy+(2+random(5)),xx+(2-random(4)),height,0,2,weight*0.66);
         }
       }
     } 
