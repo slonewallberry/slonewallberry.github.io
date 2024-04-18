@@ -28,10 +28,10 @@ function draw() {
   //VARIABLES (constants)
   const cTYPE = Math.round(Math.random()); //0 = sharp; 1 = blur
   const cSHADE = Math.round(Math.random()*0.75); //0 = no shade; 1 = shade
-  const cTHRESHOLD = 0.725+random(0.125);
-  const cBLUR = Math.floor(random(3));
+  const cTHRESHOLD = 0.725+(Math.random()*0.125);
+  const cBLUR = Math.floor(Math.random()*3);
   const cWEIGHT = 2;
-  const cSTATIC = random(0.1);
+  const cSTATIC = Math.random()*0.1;
 
   const cGROUND1 = createVector(random(width/4),random(height/20));
   const cGROUND2 = createVector(random(width/4),random(height/20));
@@ -69,9 +69,28 @@ function draw() {
   }
 
   let typeBack = weightedRandom({"none":0.5, "mesa":0.3, "trees":0.1, "treesSmall":0.1, "rocks":0.1});
-  let heightMesa = (height*heightSky)-(height*(0.1+random(0.1)));
+  let typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1});
+  let typeFront = weightedRandom({"none":0.8, "veranda":0.1, "hill":0.1});
 
-  ///DRAWING
+  if(typeBack == "rocks"){ //Path doesn't look good with rock
+    while(typeMid == "path"){
+      typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1}); 
+    }
+  }
+
+  if((heightSpace == 2 && typeMid != "lake") || typeFront == "hill"){ //Neither ground nor pond work at this height; none work / hill
+    typeMid = "none";
+  }
+
+  if(typeFront == "hill"){//Only mesas look good
+    typeBack = weightedRandom({"none":0.5, "mesa":0.5});  
+  }
+
+  let heightMesa = (height*heightSky)-(height*(0.1+(Math.random()*0.1)));
+
+  ////////////////////////////////////////////////////////////
+  //      DRAWING
+  ////////////////////////////////////////////////////////////
 
   //Sky
   drawSky(typeSky,cWEIGHT);
@@ -137,22 +156,16 @@ function draw() {
 
   //Midground
   horizonPlace[sunSlot] = 0; //Reset
-  let typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1});
 
-  if(typeBack == "rocks"){ //Path doesn't look good with rock
-    while(typeMid == "path"){
-      typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1}); 
-    }
-  }
-
-  if(heightSpace == 2 && typeMid != "lake"){ //Neither ground nor pond work at this height
-    typeMid = "none";
-  }
-  
   let pathOff = random((width/horizonPlace.length)*0.33);
   let pathOrigin = -1;
 
-  drawGround(0,yStart,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,yEnd,45,cWEIGHT); //res = 30, then 45
+  if(typeFront != "hill"){
+    drawGround(0,yStart,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,yEnd,45,cWEIGHT); //res = 30, then 45
+  }
+  else{
+    drawHills(0,yStart,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,yEnd,45,cWEIGHT);
+  }
 
   if(typeBack == "rocks"){
     horizonRand = shuffleArray(horizonRand);
@@ -197,20 +210,21 @@ function draw() {
       let lakeY = (height*heightSky)+65+(Math.random()*85);
       let lakeRes = (Math.random() > 0.5) ? 45 : 60;
       drawLake(lakeY,lakeY+20+(Math.random()*50),typeSky,lakeRes,cWEIGHT); 
+    break;
   }
 
   //Foreground
-  let hasVeranda = (heightSky >= 0.36) ? 1 : 0;
-
-  if(hasVeranda == 1){
-    hasVeranda = (random(20) > 19) ? 1 : 0;
+  switch(typeFront){
+    case "veranda":
+      if(heightSky >= 0.36){ //Doesn't look good at other heights
+        drawVeranda(cSHADE, cWEIGHT);
+      }
+    break;
   }
 
-  if(hasVeranda == 1){
-    drawVeranda(cSHADE, cWEIGHT);
-  }
-
-  //--PROCESSING--
+  ////////////////////////////////////////////////////////////
+  //      PROCESSING
+  ////////////////////////////////////////////////////////////
   if(Math.random() <= 0.1){//Black dots
     for(let i = 0; i < width; i += width/20){
       for(let j = 0; j < height; j += height/20){
@@ -1213,6 +1227,207 @@ function drawGround(x1, y1, cx1, cy1, cx2, cy2, x2, y2, res, weight){
   }
 }
 
+function drawHills(x1, y1, cx1, cy1, cx2, cy2, x2, y2, res, weight){ 
+  //Variables
+  const cSTYLE = Math.floor(random(3)); //0 = nothing; 1 = dashes; 2 = repeating lines
+  const cHAS_GAPS = Math.round(Math.random());
+  const cHAS_GRASS = Math.round(Math.random());
+  const cGRASS_NUM = 1+Math.ceil(random(4));
+  const cDASH_DIR = 225;
+
+  let hillOrder = Math.round(Math.random());
+
+  let yStart = [];
+  yStart[1] = (hillOrder ==  1) ? y1 : y1+100+(Math.random()*50);
+  yStart[0] = (hillOrder ==  1) ? y1+100+(Math.random()*50) : y1;
+  
+  let yEnd = [];
+  yEnd[1] = (hillOrder ==  1) ? y2+100+(Math.random()*50) : y2;
+  yEnd[0] = (hillOrder ==  1) ? y2 : y2+100+(Math.random()*50);
+
+  let groundFill = Math.round(Math.random());
+  groundFill = (groundFill == 1) ? 0 : 1+Math.round(Math.random());
+  
+  let t = 0;
+  let new_x = bezierPoint(x1,x1+cx1,x2-cx2,x2,t)+(1-random(2));
+  let old_x = new_x;
+  let new_y = bezierPoint(yStart[0],yStart[0]+cy1,yEnd[0]-cy2,yEnd[0],t)+(1-random(2));
+  let old_y = new_y;
+
+  let gap = [];
+  
+  for(let i = 0; i < res+1; i++){
+    gap[i] = 0;
+  }
+
+  for(let h = 0; h < 2; h++){
+    //Erase (lines & fill)
+    cnvLine.erase();
+    cnvLine.beginShape();
+
+    for(let i = 0; i < res+1; i++){
+      cnvLine.vertex(bezierPoint(x1,x1+cx1,x2-cx2,x2,i/res),bezierPoint(yStart[h],yStart[h]+cy1,yEnd[h]-cy2,yEnd[h],i/res));
+    }
+
+    cnvLine.vertex(width,height);
+    cnvLine.vertex(0,height);
+    cnvLine.vertex(0,bezierPoint(yStart[h],yStart[h]+cy1,yEnd[h]-cy2,yEnd[h],0));
+
+    cnvLine.endShape();
+    cnvLine.noErase();
+
+    cnvFill.erase();
+    cnvFill.beginShape();
+
+    for(let i = 0; i < res+1; i++){
+      cnvFill.vertex(bezierPoint(x1,x1+cx1,x2-cx2,x2,i/res),bezierPoint(yStart[h],yStart[h]+cy1,yEnd[h]-cy2,yEnd[h],i/res));
+    }
+
+    cnvFill.vertex(width,height);
+    cnvFill.vertex(0,height);
+    cnvFill.vertex(0,bezierPoint(yStart[h],yStart[h]+cy1,yEnd[h]-cy2,yEnd[h],0));
+
+    cnvFill.endShape();
+    cnvFill.noErase();
+
+    //Draw outline
+    for(let i = 0; i < res+1; i++){
+      t = i/res;
+      new_x = bezierPoint(x1,x1+cx1,x2-cx2,x2,t)+(1-random(2));
+      new_y = bezierPoint(yStart[h],yStart[h]+cy1,yEnd[h]-cy2,yEnd[h],t)+(1-random(2));
+      
+      cnvLine.strokeWeight(weight+random(weight/3));
+
+      if(gap[i] == 0){
+        cnvLine.line(old_x,old_y,new_x,new_y);
+
+        if(cSTYLE == 1){
+          drawDashes(old_x,old_y,new_x,new_y,cDASH_DIR,weight);
+        }
+
+        if(cHAS_GAPS == 1 && (random(res) > (res-1) - (res/cGRASS_NUM*cHAS_GRASS))){
+          let gapDistance = ceil(random(2));
+
+          for(let j = 0; j < gapDistance; j++){
+            gap[i+(j+1)] = 1;
+          }
+        }
+      }
+      else{
+        if(cHAS_GRASS == 1){
+          for(let i = 0; i < 3; i++){
+            let grassX = lerp(old_x,new_x,0.25+(0.25*i));
+            let grassY = lerp(old_y,new_y,0.25+(0.25*i));
+
+            cnvLine.strokeWeight((weight*0.66)+random(weight/3));
+            cnvLine.line(grassX,grassY,grassX+(2.5-random(5)),grassY-(2.5+random(12.5)));
+          }
+        }
+      }
+
+      old_x = new_x;
+      old_y = new_y;
+    }
+
+    //Draw reapeated outline
+    if(cSTYLE == 2){
+      let lineRepeat = Math.ceil(random(4))+2;
+      let repeatStyle = Math.round(Math.random()); //0 = even spaced; 1 = incrementally spaced
+      let repeatStart = 1;
+
+      if(repeatStyle == 1){
+        repeatStart = 2;
+      }
+
+      for(let j = repeatStart; j < lineRepeat; j++){
+        let yy = j*10;
+
+        if(repeatStyle == 1){
+          yy = (j*1.5)*(j*1.5);
+        }
+
+        t = 0;
+        let new_x = bezierPoint(x1,x1+cx1,x2-cx2,x2,t)+(0.5-random(1));
+        let old_x = new_x;
+        let new_y = bezierPoint(yStart[h],yStart[h]+cy1,yEnd[h]-cy2,yEnd[h],t)+(0.5-random(1))+yy;
+        let old_y = new_y;
+
+        for(let k = 0; k < res+1; k++){
+          t = k/res
+          new_x = bezierPoint(x1,x1+cx1,x2-cx2,x2,t)+(0.5-random(1));
+          new_y = bezierPoint(yStart[h],yStart[h]+cy1,yEnd[h]-cy2,yEnd[h],t)+(0.5-random(1))+yy;
+
+          if(gap[k] == 0){
+            cnvLine.strokeWeight((weight+random(weight/3)/5)-(j/lineRepeat));
+            cnvLine.line(old_x,old_y,new_x,new_y);
+
+            if(cHAS_GAPS == 1 && Math.random() > 1-(0.15*j)){
+              let gapDistance = Math.ceil(random(j+1)/(0.5+random(1.5)));
+
+              for(let l = 0; l < gapDistance; l++){
+                gap[k+(l+1)] = 1;
+              }
+            }
+          }
+
+          old_x = new_x;
+          old_y = new_y;      
+        }
+
+        for(let l = 0; l < res+1; l++){
+          if(l == 0){
+            if(cHAS_GAPS == 1 && Math.random() > 1-(0.15*j)){
+              let gapDistance = Math.ceil(random(j+1)/(0.5+random(1.5)));
+
+              for(let m = 0; m < gapDistance; m++){
+                gap[l+(m+1)] = 1;
+              }
+              
+              l = gapDistance+1;
+            }
+            else{
+              gap[l] = 0;  
+            }
+          }
+          else{
+            gap[l] = 0;
+          }
+        }
+      }
+    }
+
+    //Draw fill
+    if(groundFill > 0){
+      cnvFill.push();
+      cnvFill.beginClip();
+      cnvFill.beginShape();
+
+      for(let i = 0; i < res+1; i++){
+        cnvFill.vertex(bezierPoint(x1,x1+cx1,x2-cx2,x2,i/res),bezierPoint(yStart[h],yStart[h]+cy1,yEnd[h]-cy2,yEnd[h],i/res));
+      }
+
+      cnvFill.vertex(width,height);
+      cnvFill.vertex(0,height);
+      cnvFill.vertex(0,bezierPoint(yStart[h],yStart[h]+cy1,yEnd[h]-cy2,yEnd[h],0));
+      cnvFill.endShape();
+      cnvFill.endClip();
+      drawShade(groundFill-1);
+      cnvFill.pop();
+    }
+
+    //Reset variables for second ground
+    t = 0;
+    new_x = bezierPoint(x1,x1+cx1,x2-cx2,x2,t)+(1-random(2));
+    old_x = new_x;
+    new_y = bezierPoint(yStart[1],yStart[1]+cy1,yEnd[1]-cy2,yEnd[1],t)+(1-random(2));
+    old_y = new_y;
+    
+    for(let i = 0; i < res+1; i++){
+      gap[i] = 0;
+    }
+  }
+}
+
 function drawPath(x1, y1, cx1, cy1, cx2, cy2, x2, y2, pathOrigin, pathOff, shade, weight){
   let pathStart = (pathOrigin+pathOff)/width;
   let pathEnd = 0.02+random(0.02);
@@ -2078,7 +2293,7 @@ function setupShade(){
   for(let i = 0; i < width/sh_l; i++){
     for(let j = 0; j < height/sh_l; j++){
       if(i % 2 == 0 && j % 2 == 1 || i % 2 == 1 && j % 2 == 0){
-        cnvShadeLight.circle((i*sh_l),(j*sh_l),sh_l*0.5);            
+        cnvShadeLight.circle((i*sh_l),(j*sh_l),sh_l*(0.5+(Math.random()*0.1)));            
       }
     }
   }
@@ -2086,7 +2301,7 @@ function setupShade(){
   for(let i = 0; i < width/sh_m; i++){
     for(let j = 0; j < height/sh_m; j++){
       if(i % 2 == 0 && j % 2 == 1 || i % 2 == 1 && j % 2 == 0){
-        cnvShadeMid.circle((i*sh_m),(j*sh_m),sh_m*0.66);
+        cnvShadeMid.circle((i*sh_m),(j*sh_m),sh_m*(0.66+(Math.random()*0.1)));
       }
     }
   }
@@ -2094,7 +2309,7 @@ function setupShade(){
   for(let i = 0; i < width/sh_d; i++){
     for(let j = 0; j < height/sh_d; j++){
       if(i % 2 == 0 && j % 2 == 1 || i % 2 == 1 && j % 2 == 0){
-        cnvShadeDark.circle((i*sh_d),(j*sh_d),sh_d*0.75);
+        cnvShadeDark.circle((i*sh_d),(j*sh_d),sh_d*(0.75+(Math.random()*0.1)));
       }
     }
   }
