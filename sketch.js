@@ -36,8 +36,8 @@ function draw() {
   const cGROUND1 = createVector(random(width/4),random(height/20));
   const cGROUND2 = createVector(random(width/4),random(height/20));
 
-  const cTREENUM = Math.ceil(random(4)); 
-  const cTREESTYLE = Math.ceil(random(4));
+  const cTREENUM = Math.ceil(Math.random()*4); 
+  const cTREESTYLE = Math.ceil(Math.random()*4);
 
   //Variables (other)
   let heightSky = 0.45+random(0.1);
@@ -58,7 +58,7 @@ function draw() {
   let sunSlot = Math.ceil(random(horizonPlace.length-1));
 
   if(Math.random() <= 0.1){
-    typeSky = Math.ceil(random(3));
+    typeSky = Math.ceil(Math.random()*3);
   }
 
   if(typeSun == 1){
@@ -98,7 +98,7 @@ function draw() {
   //Sun
   if(Math.random() <= 0.2 && typeSky != 2 && heightSpace > 0){
     let sunOff = random((width/horizonPlace.length)*0.66);
-    drawSun(((width/horizonPlace.length)*sunSlot)+sunOff,(heightMesa/8)*(1+Math.ceil(random(6))),typeSun,cWEIGHT);
+    drawSun(((width/horizonPlace.length)*sunSlot)+sunOff,(heightMesa/8)*(1+Math.ceil(Math.random()*6)),typeSun,cWEIGHT);
     horizonPlace[sunSlot] = sunOff;
   }
 
@@ -260,7 +260,7 @@ function draw() {
     filter(BLUR,1); //Modulate this
   }
   else{
-    if(cSTATIC >= 0.025){
+    if(cSTATIC >= 0.025 && typeSky != 3){//Doesn't look good at night
       stroke(255);
       strokeWeight(1);
 
@@ -1811,6 +1811,16 @@ function drawLake(y1, y2, typeSky, res, weight){
     if(Math.random() <= 0.85){
       cnvLine.strokeWeight((weight+random(weight/3))*0.5);
       cnvLine.line(old_x,old_y+10,new_x,new_y+10);
+    }
+
+    if(Math.random() <= 0.5){
+      cnvLine.strokeWeight((weight+random(weight/3))*0.5);
+      cnvLine.line(old_x,old_y+20,new_x,new_y+20);
+    }
+
+    if(Math.random() <= 0.15){
+      cnvLine.strokeWeight((weight+random(weight/3))*0.5);
+      cnvLine.line(old_x,old_y+25,new_x,new_y+25);
     }
     
     old_x = new_x;
