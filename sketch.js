@@ -13,7 +13,11 @@ function setup() {
 }
 
 function draw() {  
-  //VARIABLES (canvases)
+  ////////////////////////////////////////////////////////////
+  //      VARIABLES
+  ////////////////////////////////////////////////////////////
+
+  //Canvases
   cnvLine = createGraphics(width,height);
   cnvFill = createGraphics(width,height);
   cnvShadeLight = createGraphics(width,height);
@@ -25,7 +29,7 @@ function draw() {
   cnvFill.fill(0);
   background(255);
 
-  //VARIABLES (constants)
+  //Constants
   const cTYPE = Math.round(Math.random()); //0 = sharp; 1 = blur
   const cSHADE = Math.round(Math.random()*0.75); //0 = no shade; 1 = shade
   const cTHRESHOLD = 0.725+(Math.random()*0.125);
@@ -39,7 +43,7 @@ function draw() {
   const cTREENUM = Math.ceil(Math.random()*4); 
   const cTREESTYLE = Math.ceil(Math.random()*4);
 
-  //Variables (other)
+  //Other
   let heightSky = 0.45+random(0.1);
   let heightSpace = 1; //0 - top; 1 - middle; 2 - bottom
   let horizonPlace = [0,0,0,0,0,0];
@@ -52,6 +56,7 @@ function draw() {
 
   let yStart = height*heightSky;
   let yEnd = height*heightSky;
+  let heightMesa = (height*heightSky)-(height*(0.1+(Math.random()*0.1)));
 
   let typeSky = 0; //0 - clear; 1 - waves; 2 - lines; 3 - night
   let typeSun  = (Math.round(Math.random()) == 1) ? 1 : 0; //0 - normal; 1 - rings; 2 - rays
@@ -68,25 +73,28 @@ function draw() {
     }
   }
 
-  let typeBack = weightedRandom({"none":0.5, "mesa":0.3, "trees":0.1, "treesSmall":0.1, "rocks":0.1});
-  let typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1});
-  let typeFront = weightedRandom({"none":0.8, "veranda":0.1, "hill":0.1});
+  let typeBack = weightedRandom({"none":0.5, "mesa":0.3, "mesaBig":0.1, "trees":0.1, "treesSmall":0.1, "rocks":0.1});
+  let typeMid = weightedRandom({"none":0.5, "path":0.1, "pond":0.1, "lake":0.1, "hill":0.1});
+  let typeFront = weightedRandom({"none":0.7, "veranda":0.1, "border":0.2});
 
+  //Fixes
   if(typeBack == "rocks"){ //Path doesn't look good with rock
     while(typeMid == "path"){
       typeMid = weightedRandom({"none":0.5, "path":0.2, "pond":0.2, "lake":0.1}); 
     }
   }
 
-  if((heightSpace == 2 && typeMid != "lake") || typeFront == "hill"){ //Neither ground nor pond work at this height; none work / hill
+  if((typeBack == "trees" || typeBack == "treesSmall") && typeSky == 3){
+    typeBack = "none";
+  }
+
+  if((heightSpace == 2 && typeMid != "lake")){ //Neither ground nor pond work at this height
     typeMid = "none";
   }
 
-  if(typeFront == "hill"){//Only mesas look good
+  if(typeMid == "hill"){//Only mesas look good
     typeBack = weightedRandom({"none":0.5, "mesa":0.5});  
   }
-
-  let heightMesa = (height*heightSky)-(height*(0.1+(Math.random()*0.1)));
 
   ////////////////////////////////////////////////////////////
   //      DRAWING
@@ -107,6 +115,22 @@ function draw() {
     //Mesas
     case "mesa":
       drawMesa(heightMesa,height*heightSky,45,cSHADE,cWEIGHT);
+    break;
+
+    //Big mesa
+    case "mesaBig":
+      let mesaTiers = 2+Math.round(Math.random()*3);
+      let mesaHeight = 1;
+
+      if(heightSpace == 0){
+        mesaTiers = 1+Math.round(Math.random()*2);  
+        mesaHeight = 0.75;
+      }
+      else if(heightSpace == 2){
+        mesaHeight = 1+(Math.random()*2);
+      }
+
+      drawBigMesa(yStart+cGROUND1.y,mesaTiers,mesaHeight,cSHADE,cWEIGHT);
     break;
 
     //Trees
@@ -160,7 +184,7 @@ function draw() {
   let pathOff = random((width/horizonPlace.length)*0.33);
   let pathOrigin = -1;
 
-  if(typeFront != "hill"){
+  if(typeMid != "hill"){
     drawGround(0,yStart,cGROUND1.x,cGROUND1.y,cGROUND2.x,cGROUND2.y,width,yEnd,45,cWEIGHT); //res = 30, then 45
   }
   else{
@@ -219,6 +243,10 @@ function draw() {
       if(heightSky >= 0.36){ //Doesn't look good at other heights
         drawVeranda(cSHADE, cWEIGHT);
       }
+    break;
+
+    case "border":
+      drawBorder(cWEIGHT);
     break;
   }
 
@@ -648,6 +676,126 @@ function drawMesa(y1, y2, res, shade, weight){
   }
 }
 
+function drawBigMesa(y, tiers, h, shade, weight){
+  let bufferX = [];
+  let bufferY = [];
+  let xx = [];
+  let yy = [];
+  let shadeDist = (Math.round(Math.random()) == 1) ? 0.5+(Math.random()*0.1) : 0.3+(Math.random()*0.15);
+  let shadeStyle = Math.round(Math.random());
+  let shadeAmount = 10+Math.round(Math.random()*10);
+  let shadeLines = Math.round(Math.random());
+  
+  for(let i = 0; i < (tiers*2); i++){
+    bufferX[i] = (width/25)+(Math.random()*(width/25));
+    
+    if(i > 0){
+      xx[i] = xx[i-1]+bufferX[i];
+    }
+    else{
+      xx[i] = bufferX[i];
+    }
+  }
+  
+  for(let i = 0; i < (tiers*2); i += 2){
+    if(i == 0){
+      bufferY[i] = 0;
+    }
+    else{
+      bufferY[i] = (width/15)+(Math.random()*(width/15))*h;
+    }
+    
+    if(i > 0){
+      yy[i] = yy[i-1]-bufferY[i];
+      yy[i+1] = yy[i-1]-bufferY[i];
+    }
+    else{
+      yy[i] = y-bufferY[i];
+      yy[i+1] = y-bufferY[i];
+    }
+  }
+  
+  for(let i = 1; i < (tiers*2)-2; i++){
+    //Erase (line, fill)
+    cnvLine.push();
+    cnvLine.erase();
+    cnvLine.beginShape();
+    cnvLine.vertex(xx[i],yy[i]);
+    cnvLine.vertex(xx[i+1],yy[i+1]);
+    cnvLine.vertex(width-(xx[i+1]/2),yy[i+1]);
+    cnvLine.vertex(width-(xx[i]/2),yy[i]);
+    cnvLine.endShape(CLOSE);
+    cnvLine.noErase();
+    cnvLine.pop();
+
+    cnvFill.push();
+    cnvFill.erase();
+    cnvFill.beginShape();
+    cnvFill.vertex(xx[i],yy[i]);
+    cnvFill.vertex(xx[i+1],yy[i+1]);
+    cnvFill.vertex(width-(xx[i+1]/2),yy[i+1]);
+    cnvFill.vertex(width-(xx[i]/2),yy[i]);
+    cnvFill.endShape(CLOSE);
+    cnvFill.noErase();
+    cnvFill.pop();
+
+    //Sides (lines)
+    lineWobble(xx[i],yy[i],xx[i+1],yy[i+1],0,5,weight);
+    lineWobble(width-(xx[i]/2),yy[i],width-(xx[i+1]/2),yy[i+1],0,5,weight*0.66);
+
+    if(shade == 1){
+      let mesaShade = Math.floor(Math.random()*4);
+
+      cnvFill.push();
+      cnvFill.beginClip();
+      cnvFill.beginShape();
+      cnvFill.vertex(xx[i],yy[i]);
+      cnvFill.vertex(xx[i+1],yy[i+1]);
+      cnvFill.vertex(width-(xx[i+1]/2),yy[i+1]);
+      cnvFill.vertex(width-(xx[i]/2),yy[i]);
+      cnvFill.endShape(CLOSE);
+      cnvFill.endClip();
+
+      switch(mesaShade){
+        case 1: drawShade(0); break;
+        case 2: drawShade(1); break;
+        case 3: drawShade(2); break;
+        default: break;
+      }
+
+      cnvFill.pop();  
+    }
+    
+    //Fill (lines)
+    for(let j = 0; j < shadeAmount; j++){
+        if(i % 2 == 0 && shadeLines == 0 && Math.random() > 0.9){
+          break;
+        }
+      
+        let ny = yy[i];
+        let ny2 = yy[i+1];
+        let nx; 
+        let nx2;
+      
+        switch(shadeStyle){
+          case 0:
+            nx = lerp(xx[i],width-(xx[i]/2),(j/shadeAmount)*shadeDist);
+            nx2 = lerp(xx[i+1],width-(xx[i+1]/2),(j/shadeAmount)*shadeDist);
+          break;
+          
+          case 1:
+            nx = lerp(xx[i],width-(xx[i]/2),((j/shadeAmount)*shadeDist)*(0.05*j));
+            nx2 = lerp(xx[i+1],width-(xx[i+1]/2),((j/shadeAmount)*shadeDist)*(0.05*j));
+          break;
+        }
+      
+        lineWobble(nx,ny,nx2,ny2,0,5,weight*0.5);
+    }
+  }
+  
+  lineWobble(xx[(tiers*2)-2],yy[(tiers*2)-2],width-(xx[(tiers*2)-2]/2),yy[(tiers*2)-2],0,5,weight);
+}
+
 function drawTree(x, y, w, h, style, shade, weight){
   const ridgeNum = 4+Math.ceil(random(8));
   const shrubNum = Math.ceil(random(4));
@@ -819,6 +967,7 @@ function drawTree(x, y, w, h, style, shade, weight){
         lineWobble(x+xx+(xadd*2),y-h-(yy*i),x+xx+(xadd*3),y-h-yadd-(yy*i),0,2,weight*0.55);
         lineWobble(x+xx+(xadd*3),y-h-yadd-(yy*i),x+xx+(xadd*4),y-h-(yy*i),0,2,weight*0.55);
         lineWobble(x+xx+(xadd*4),y-h-(yy*i),x+xx+(xadd*5),y-h-yadd-(yy*i),0,2,weight*0.55);
+
         lineWobble(x+xx,y-h-(yy*i),x+xx-xadd,y-h-yadd-(yy*i),0,2,weight*0.55);
         lineWobble(x+xx-xadd,y-h-yadd-(yy*i),x+xx-(xadd*2),y-h-(yy*i),0,2,weight*0.55);
         lineWobble(x+xx-(xadd*2),y-h-(yy*i),x+xx-(xadd*3),y-h-yadd-(yy*i),0,2,weight*0.55);
@@ -2038,25 +2187,52 @@ function drawVeranda(shade, weight){
   }
 }
 
-function drawDashes(x1, y1, x2, y2, dir, weight){
-  let lengthDashes = Math.ceil(random(15))+5;
+function drawBorder(weight){
+  let size = width/100+(Math.random()*(width/50));
+  let res = (Math.random() > 0.5) ? 45 : 20;
 
-  let strokeX = (lengthDashes+(2-random(4)))*cos(dir+(0.5-random(1)));
-  let strokeY = (lengthDashes+(2-random(4)))*sin(45+(0.5-random(1)));
-  let midX1 = lerp(x1,x2,0.33);
-  let midX2 = lerp(x1,x2,0.66);
-  let midY1 = lerp(y1,y2,0.33);
-  let midY2 = lerp(y1,y2,0.66);
+  //Erase
+  cnvLine.push();
+  cnvLine.erase();
+  cnvLine.beginShape();
+  cnvLine.vertex(0,0);
+  cnvLine.vertex(size,size);
+  cnvLine.vertex(width-size,size);
+  cnvLine.vertex(width-size,height-size);
+  cnvLine.vertex(size,height-size);
+  cnvLine.vertex(size,size);
+  cnvLine.vertex(0,0);
+  cnvLine.vertex(0,height);
+  cnvLine.vertex(width,height);
+  cnvLine.vertex(width,0);
+  cnvLine.vertex(0,0);
+  cnvLine.endShape();
+  cnvLine.noErase();
+  cnvLine.pop();
 
-  cnvLine.strokeWeight((weight*0.66)+random(weight/3));
-  cnvLine.line(x1,y1,x1+strokeX,y1+strokeY);
+  cnvFill.push();
+  cnvFill.erase();
+  cnvFill.beginShape();
+  cnvFill.vertex(0,0);
+  cnvFill.vertex(size,size);
+  cnvFill.vertex(width-size,size);
+  cnvFill.vertex(width-size,height-size);
+  cnvFill.vertex(size,height-size);
+  cnvFill.vertex(size,size);
+  cnvFill.vertex(0,0);
+  cnvFill.vertex(0,height);
+  cnvFill.vertex(width,height);
+  cnvFill.vertex(width,0);
+  cnvFill.vertex(0,0);
+  cnvFill.endShape();
+  cnvFill.noErase();
+  cnvFill.pop();
 
-  strokeX = ((lengthDashes*0.66)+(2-random(4)))*cos(dir+(0.25-random(0.5)));
-  strokeY = ((lengthDashes*0.66)+(2-random(4)))*sin(45+(0.25-random(0.5)));
-
-  cnvLine.strokeWeight((weight*0.33)+random(weight/3));
-  cnvLine.line(midX1,midY1,midX1+strokeX,midY1+strokeY);
-  cnvLine.line(midX2,midY2,midX2+strokeX,midY2+strokeY);
+  //Lines
+  lineWobble(size,size,width-size,size,0,res,weight);
+  lineWobble(width-size,size,width-size,height-size,0,res,weight);
+  lineWobble(width-size,height-size,size,height-size,0,res,weight);
+  lineWobble(size,height-size,size,size,0,res,weight);
 }
 
 //Functions (drawing; part)
@@ -2285,6 +2461,27 @@ function poissonDisc(weight){
       cnvLine.ellipse(ordered[i].x, ordered[i].y,r*(0.5+random(0.5)),r*(0.5+random(0.5)));
     }
   }
+}
+
+function drawDashes(x1, y1, x2, y2, dir, weight){
+  let lengthDashes = Math.ceil(random(15))+5;
+
+  let strokeX = (lengthDashes+(2-random(4)))*cos(dir+(0.5-random(1)));
+  let strokeY = (lengthDashes+(2-random(4)))*sin(45+(0.5-random(1)));
+  let midX1 = lerp(x1,x2,0.33);
+  let midX2 = lerp(x1,x2,0.66);
+  let midY1 = lerp(y1,y2,0.33);
+  let midY2 = lerp(y1,y2,0.66);
+
+  cnvLine.strokeWeight((weight*0.66)+random(weight/3));
+  cnvLine.line(x1,y1,x1+strokeX,y1+strokeY);
+
+  strokeX = ((lengthDashes*0.66)+(2-random(4)))*cos(dir+(0.25-random(0.5)));
+  strokeY = ((lengthDashes*0.66)+(2-random(4)))*sin(45+(0.25-random(0.5)));
+
+  cnvLine.strokeWeight((weight*0.33)+random(weight/3));
+  cnvLine.line(midX1,midY1,midX1+strokeX,midY1+strokeY);
+  cnvLine.line(midX2,midY2,midX2+strokeX,midY2+strokeY);
 }
 
 //Function (drawing; shading)
